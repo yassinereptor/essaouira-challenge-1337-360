@@ -1,0 +1,62 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  _require(_dependencyMap[0], "../Controls/Types");
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var Location = function () {
+    function Location(position, rotation) {
+      _classCallCheck(this, Location);
+
+      if (position) {
+        this.worldPosition = [position[0], position[1], position[2]];
+      } else {
+        this.worldPosition = [0, 0, 0];
+      }
+
+      if (rotation) {
+        this.worldRotation = [rotation[0], rotation[1], rotation[2], rotation[3]];
+      } else {
+        this.worldRotation = [0, 0, 0, 1];
+      }
+    }
+
+    _createClass(Location, [{
+      key: "setWorldPosition",
+      value: function setWorldPosition(x, y, z) {
+        this.worldPosition[0] = x;
+        this.worldPosition[1] = y;
+        this.worldPosition[2] = z;
+        this._dirty = true;
+      }
+    }, {
+      key: "setWorldRotation",
+      value: function setWorldRotation(x, y, z, w) {
+        this.worldRotation[0] = x;
+        this.worldRotation[1] = y;
+        this.worldRotation[2] = z;
+        this.worldRotation[3] = w;
+        this._dirty = true;
+      }
+    }, {
+      key: "isDirty",
+      value: function isDirty() {
+        return this._dirty;
+      }
+    }, {
+      key: "clearDirtyFlag",
+      value: function clearDirtyFlag() {
+        this._dirty = false;
+      }
+    }]);
+
+    return Location;
+  }();
+
+  exports.default = Location;
+});

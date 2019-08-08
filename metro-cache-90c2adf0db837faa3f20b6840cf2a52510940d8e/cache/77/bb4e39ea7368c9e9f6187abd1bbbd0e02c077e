@@ -1,0 +1,96 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var KeyboardInputChannel = function () {
+    function KeyboardInputChannel() {
+      var customMapping = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+
+      _classCallCheck(this, KeyboardInputChannel);
+
+      this._batchedEvents = [];
+      this._mapping = [];
+      this._mapping[13] = 'confirm';
+      this._mapping[32] = 'confirm';
+
+      for (var key = 0, len = customMapping.length; key < len; key++) {
+        if (key in customMapping) {
+          this._mapping[key] = customMapping[key];
+        }
+      }
+
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+      window.addEventListener('keydown', this._onKeyDown, true);
+      window.addEventListener('keyup', this._onKeyUp, true);
+    }
+
+    _createClass(KeyboardInputChannel, [{
+      key: "_onKeyDown",
+      value: function _onKeyDown(e) {
+        var code = e.keyCode;
+
+        if (!code) {
+          return;
+        }
+
+        var event = {
+          type: 'button',
+          button: code,
+          action: e.repeat ? 'repeat' : 'down',
+          source: 'keyboard'
+        };
+        var buttonClass = this._mapping[code];
+
+        if (buttonClass) {
+          event.buttonClass = buttonClass;
+        }
+
+        this._batchedEvents.push(event);
+      }
+    }, {
+      key: "_onKeyUp",
+      value: function _onKeyUp(e) {
+        var code = e.keyCode;
+
+        if (!code) {
+          return;
+        }
+
+        var event = {
+          type: 'button',
+          button: code,
+          action: 'up',
+          source: 'keyboard'
+        };
+        var buttonClass = this._mapping[code];
+
+        if (buttonClass) {
+          event.buttonClass = buttonClass;
+        }
+
+        this._batchedEvents.push(event);
+      }
+    }, {
+      key: "getEvents",
+      value: function getEvents(acc) {
+        var events = this._batchedEvents;
+
+        for (var i = 0, len = events.length; i < len; i++) {
+          acc.push(events[i]);
+        }
+
+        events.length = 0;
+      }
+    }]);
+
+    return KeyboardInputChannel;
+  }();
+
+  exports.default = KeyboardInputChannel;
+});

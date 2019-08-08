@@ -1,0 +1,406 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _three = _require(_dependencyMap[0], "three");
+
+  var THREE = _interopRequireWildcard(_three);
+
+  var _Location = _require(_dependencyMap[1], "../Compositor/Location");
+
+  var _Location2 = _interopRequireDefault(_Location);
+
+  var _Surface = _require(_dependencyMap[2], "../Compositor/Surface");
+
+  var _Surface2 = _interopRequireDefault(_Surface);
+
+  var _ReactExecutorWebWorker = _require(_dependencyMap[3], "../Executor/ReactExecutorWebWorker");
+
+  var _ReactExecutorWebWorker2 = _interopRequireDefault(_ReactExecutorWebWorker);
+
+  _require(_dependencyMap[4], "../Controls/Types");
+
+  _require(_dependencyMap[5], "../Controls/InputChannels/Types");
+
+  var _GuiSys = _require(_dependencyMap[6], "../OVRUI/UIView/GuiSys");
+
+  var _GuiSys2 = _interopRequireDefault(_GuiSys);
+
+  var _ReactNativeContext = _require(_dependencyMap[7], "../ReactNativeContext");
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var raycaster = new THREE.Raycaster();
+
+  function intersectObject(object, ray, intersects) {
+    if (object.visible === false || object.raycastDisabled === true) {
+      return;
+    }
+
+    object.raycast(ray, intersects);
+    var children = object.children;
+
+    for (var i = 0, l = children.length; i < l; i++) {
+      intersectObject(children[i], ray, intersects);
+    }
+  }
+
+  var surfaceHits = [];
+  var DEVTOOLS_FLAG = /\bdevtools\b/;
+  var HOTRELOAD_FLAG = /\bhotreload\b/;
+
+  var Runtime = function () {
+    function Runtime(scene, bundle) {
+      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+      _classCallCheck(this, Runtime);
+
+      this._rootLocations = {};
+      this._rootSurfaces = {};
+      this._scene = scene;
+      this._cursorIntersectsSurface = false;
+      this._lastHit = null;
+      this._offscreenRenderUID = 0;
+      var enableDevTools = false;
+      var bundleURL = bundle;
+      var enableHotReload = false;
+
+      if (__DEV__) {
+        if (DEVTOOLS_FLAG.test(location.search)) {
+          enableDevTools = true;
+
+          if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+            console.log('We detected that you have the React Devtools extension installed. ' + 'Please note that at this time, React VR is only compatible with the ' + 'standalone Inspector (npm run devtools).');
+          }
+        }
+
+        if (HOTRELOAD_FLAG.test(location.search)) {
+          enableHotReload = true;
+
+          if (bundleURL.indexOf('?') > -1) {
+            bundleURL += '&hot=true';
+          } else {
+            bundleURL += '?hot=true';
+          }
+        }
+      }
+
+      this.executor = options.executor || new _ReactExecutorWebWorker2.default({
+        enableDevTools: enableDevTools
+      });
+      this.guiSys = new _GuiSys2.default(scene, {});
+      this.context = new _ReactNativeContext.ReactNativeContext(this.guiSys, this.executor, {
+        assetRoot: options.assetRoot,
+        customViews: options.customViews || [],
+        enableHotReload: enableHotReload
+      });
+      var modules = options.nativeModules;
+
+      if (modules) {
+        for (var i = 0; i < modules.length; i++) {
+          var m = modules[i];
+
+          if (typeof m === 'function') {
+            this.context.registerModule(m(this.context));
+          } else {
+            this.context.registerModule(m);
+          }
+        }
+      }
+
+      this.context.init(bundleURL);
+    }
+
+    _createClass(Runtime, [{
+      key: "createRootView",
+      value: function createRootView(name, initialProps, dest, surfaceName) {
+        if (dest instanceof _Surface2.default) {
+          var context = this.context;
+
+          var _offscreenRenderUID = this.guiSys.registerOffscreenRender(dest.getScene(), dest.getCamera(), dest.getRenderTarget());
+
+          var _tag = context.createRootView(name, initialProps, dest.getScene(), true);
+
+          var rootView = context.getViewForTag(_tag);
+
+          if (rootView) {
+            rootView.surfaceName = surfaceName;
+          }
+
+          this._rootSurfaces[String(_tag)] = {
+            tag: _tag,
+            offscreenRenderUID: _offscreenRenderUID,
+            surface: dest,
+            name: surfaceName || ''
+          };
+          return _tag;
+        } else if (dest instanceof _Location2.default) {
+          var _node = new THREE.Object3D();
+
+          _node.position.fromArray(dest.worldPosition);
+
+          _node.quaternion.fromArray(dest.worldRotation);
+
+          this.guiSys.root.add(_node);
+
+          var _tag2 = this.context.createRootView(name, initialProps, _node);
+
+          this._rootLocations[String(_tag2)] = {
+            tag: _tag2,
+            location: dest,
+            node: _node
+          };
+          return _tag2;
+        }
+
+        throw new Error('Invalid mount point');
+      }
+    }, {
+      key: "getSurfaceInfo",
+      value: function getSurfaceInfo(tag) {
+        var key = String(tag);
+
+        if (this._rootSurfaces[key]) {
+          return this._rootSurfaces[key];
+        }
+
+        return null;
+      }
+    }, {
+      key: "destroyRootView",
+      value: function destroyRootView(tag) {
+        var key = String(tag);
+
+        if (this._rootSurfaces[key]) {
+          this.context.destroyRootView(tag);
+          this.guiSys.unregisterOffscreenRender(this._rootSurfaces[key].offscreenRenderUID);
+          delete this._rootSurfaces[key];
+          return;
+        }
+
+        if (this._rootLocations[key]) {
+          this.context.destroyRootView(tag);
+          delete this._rootLocations[key];
+          return;
+        }
+      }
+    }, {
+      key: "frame",
+      value: function frame(camera, renderer) {
+        var context = this.context;
+        var offscreen = {};
+        this.guiSys.frameRenderUpdates(camera);
+        offscreen = this.guiSys.getOffscreenRenders();
+        context.frame(camera);
+
+        for (var item in offscreen) {
+          var params = offscreen[item];
+
+          if (!params) {
+            continue;
+          }
+
+          var oldClearColor = renderer.getClearColor();
+          var oldClearAlpha = renderer.getClearAlpha();
+          var oldClipping = renderer.localClippingEnabled;
+          renderer.localClippingEnabled = true;
+          renderer.setClearColor('#000', 0);
+          renderer.render(params.scene, params.camera, params.renderTarget, true);
+          renderer.setClearColor(oldClearColor, oldClearAlpha);
+          renderer.setRenderTarget(null);
+          renderer.localClippingEnabled = oldClipping;
+        }
+
+        for (var key in this._rootLocations) {
+          var _rootLocations$key = this._rootLocations[key],
+              _location = _rootLocations$key.location,
+              _node2 = _rootLocations$key.node;
+
+          if (_location.isDirty()) {
+            var worldPosition = _location.worldPosition;
+
+            _node2.position.set(worldPosition[0], worldPosition[1], worldPosition[2]);
+
+            var worldRotation = _location.worldRotation;
+
+            _node2.quaternion.set(worldRotation[0], worldRotation[1], worldRotation[2], worldRotation[3]);
+
+            _location.clearDirtyFlag();
+          }
+        }
+      }
+    }, {
+      key: "queueEvents",
+      value: function queueEvents(events) {
+        if (this.guiSys) {
+          for (var i = 0; i < events.length; i++) {
+            this.guiSys.eventDispatcher.dispatchEvent({
+              type: 'InputChannelEvent',
+              args: events[i]
+            });
+          }
+        } else if (this._lastHit != null) {
+          for (var _i = 0; _i < events.length; _i++) {
+            this.context.callFunction('RCTEventEmitter', 'receiveEvent', [this._lastHit, 'topInput', {
+              inputEvent: events[_i],
+              target: this._lastHit,
+              source: this._lastHit
+            }]);
+          }
+        }
+      }
+    }, {
+      key: "setRays",
+      value: function setRays(rays, cameraPosition, cameraQuat) {
+        if (rays.length < 1) {
+          if (this.guiSys) {
+            this.guiSys.updateLastHit(null, '');
+          }
+
+          this._lastHit = null;
+          return;
+        }
+
+        var ray = rays[0];
+        var root = this.guiSys ? this.guiSys.root : this._scene;
+        var firstHit = null;
+        raycaster.ray.origin.fromArray(ray.origin);
+        raycaster.ray.direction.fromArray(ray.direction);
+        var hits = raycaster.intersectObject(root, true);
+        var hitSurface = false;
+
+        for (var i = 0; i < hits.length; i++) {
+          var hit = hits[i];
+          var notHit = false;
+
+          if (hit.uv && hit.object && hit.object.subScene) {
+            hitSurface = true;
+            var distanceToSubscene = hit.distance;
+            var scene = hit.object.subScene;
+            var x = hit.uv.x * scene._rttWidth;
+            var y = (1 - hit.uv.y) * scene._rttHeight;
+            var surfaceHit = this.surfaceRaycast(scene, x, y);
+
+            if (surfaceHit) {
+              hit = surfaceHit;
+              hit.distance = distanceToSubscene;
+            } else {
+              notHit = true;
+            }
+          }
+
+          if (!notHit && !firstHit && !hit.isAlmostHit) {
+            firstHit = hit;
+          }
+        }
+
+        this.setIntersection(firstHit, ray, hitSurface);
+      }
+    }, {
+      key: "surfaceRaycast",
+      value: function surfaceRaycast(scene, x, y) {
+        raycaster.ray.origin.set(x, y, 0.1);
+        raycaster.ray.direction.set(0, 0, -1);
+        surfaceHits.length = 0;
+        intersectObject(scene, raycaster, surfaceHits);
+
+        if (surfaceHits.length === 0) {
+          return null;
+        }
+
+        for (var i = surfaceHits.length - 1; i >= 0; i--) {
+          var hit = surfaceHits[i];
+
+          if (hit.object && typeof hit.object.shouldAcceptHitEvent === 'function') {
+            if (!hit.object.shouldAcceptHitEvent()) {
+              continue;
+            }
+          }
+
+          return hit;
+        }
+      }
+    }, {
+      key: "setIntersection",
+      value: function setIntersection(hit, ray, onSurface) {
+        this._cursorIntersectsSurface = !!onSurface;
+
+        if (!this.guiSys) {
+          return;
+        }
+
+        if (hit) {
+          this.guiSys.updateLastHit(hit.object, ray.type);
+
+          if (hit.object.shouldAcceptHitEvent && hit.object.shouldAcceptHitEvent()) {
+            this.guiSys.setLastLocalIntersect(hit.uv.x, hit.uv.y);
+          }
+
+          this.guiSys._cursor.intersectDistance = hit.distance;
+        } else {
+          this.guiSys.updateLastHit(null, ray.type);
+        }
+
+        this.guiSys.setCursorProperties(ray.origin.slice(), ray.direction.slice(), ray.drawsCursor);
+      }
+    }, {
+      key: "set2DRays",
+      value: function set2DRays(rays, surface) {
+        if (rays.length < 1) {
+          this.guiSys.updateLastHit(null, '');
+          return;
+        }
+
+        var ray = rays[0];
+        var hit = this.surfaceRaycast(surface.getScene(), ray.origin[0], ray.origin[1]);
+        this.setIntersection(hit, ray, true);
+      }
+    }, {
+      key: "isMouseCursorActive",
+      value: function isMouseCursorActive() {
+        if (!this.guiSys) {
+          return false;
+        }
+
+        return this.guiSys.mouseCursorActive;
+      }
+    }, {
+      key: "isCursorActive",
+      value: function isCursorActive() {
+        if (this._cursorIntersectsSurface) {
+          return true;
+        }
+
+        if (!this.guiSys) {
+          return false;
+        }
+
+        var lastHit = this.guiSys._cursor.lastHit;
+        var lastAlmostHit = this.guiSys._cursor.lastAlmostHit;
+        var active = lastHit && lastHit.isInteractable;
+
+        if (!active) {
+          active = lastAlmostHit && lastAlmostHit.isInteractable;
+        }
+
+        return !!active;
+      }
+    }, {
+      key: "getCursorDepth",
+      value: function getCursorDepth() {
+        return this.guiSys._cursor.intersectDistance;
+      }
+    }]);
+
+    return Runtime;
+  }();
+
+  exports.default = Runtime;
+});

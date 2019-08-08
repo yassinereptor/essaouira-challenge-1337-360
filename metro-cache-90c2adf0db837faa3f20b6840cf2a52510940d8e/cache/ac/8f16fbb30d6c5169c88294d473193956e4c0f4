@@ -1,0 +1,602 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _three = _require(_dependencyMap[0], "three");
+
+  var THREE = _interopRequireWildcard(_three);
+
+  var _bundleFromLocation = _require(_dependencyMap[1], "./bundleFromLocation");
+
+  var _bundleFromLocation2 = _interopRequireDefault(_bundleFromLocation);
+
+  var _Compositor = _require(_dependencyMap[2], "./Compositor/Compositor");
+
+  var _Compositor2 = _interopRequireDefault(_Compositor);
+
+  var _Location = _require(_dependencyMap[3], "./Compositor/Location");
+
+  var _Location2 = _interopRequireDefault(_Location);
+
+  var _Overlay = _require(_dependencyMap[4], "./Compositor/Overlay");
+
+  var _Overlay2 = _interopRequireDefault(_Overlay);
+
+  var _VRState = _require(_dependencyMap[5], "./Compositor/VRState");
+
+  var _VRState2 = _interopRequireDefault(_VRState);
+
+  var _MousePanCameraController = _require(_dependencyMap[6], "./Controls/CameraControllers/MousePanCameraController");
+
+  var _MousePanCameraController2 = _interopRequireDefault(_MousePanCameraController);
+
+  var _ScrollPanCameraController = _require(_dependencyMap[7], "./Controls/CameraControllers/ScrollPanCameraController");
+
+  var _ScrollPanCameraController2 = _interopRequireDefault(_ScrollPanCameraController);
+
+  var _DeviceOrientationCameraController = _require(_dependencyMap[8], "./Controls/CameraControllers/DeviceOrientationCameraController");
+
+  var _DeviceOrientationCameraController2 = _interopRequireDefault(_DeviceOrientationCameraController);
+
+  var _Controls = _require(_dependencyMap[9], "./Controls/Controls");
+
+  var _Controls2 = _interopRequireDefault(_Controls);
+
+  var _GamepadInputChannel = _require(_dependencyMap[10], "./Controls/InputChannels/GamepadInputChannel");
+
+  var _GamepadInputChannel2 = _interopRequireDefault(_GamepadInputChannel);
+
+  var _KeyboardInputChannel = _require(_dependencyMap[11], "./Controls/InputChannels/KeyboardInputChannel");
+
+  var _KeyboardInputChannel2 = _interopRequireDefault(_KeyboardInputChannel);
+
+  var _MouseInputChannel = _require(_dependencyMap[12], "./Controls/InputChannels/MouseInputChannel");
+
+  var _MouseInputChannel2 = _interopRequireDefault(_MouseInputChannel);
+
+  var _TouchInputChannel = _require(_dependencyMap[13], "./Controls/InputChannels/TouchInputChannel");
+
+  var _TouchInputChannel2 = _interopRequireDefault(_TouchInputChannel);
+
+  _require(_dependencyMap[14], "./Controls/InputChannels/Types");
+
+  _require(_dependencyMap[15], "./Controls/Types");
+
+  var _ControllerRaycaster = _require(_dependencyMap[16], "./Controls/Raycasters/ControllerRaycaster");
+
+  var _ControllerRaycaster2 = _interopRequireDefault(_ControllerRaycaster);
+
+  var _MouseRaycaster = _require(_dependencyMap[17], "./Controls/Raycasters/MouseRaycaster");
+
+  var _MouseRaycaster2 = _interopRequireDefault(_MouseRaycaster);
+
+  var _TouchRaycaster = _require(_dependencyMap[18], "./Controls/Raycasters/TouchRaycaster");
+
+  var _TouchRaycaster2 = _interopRequireDefault(_TouchRaycaster);
+
+  var _AudioModule = _require(_dependencyMap[19], "./Modules/AudioModule");
+
+  var _AudioModule2 = _interopRequireDefault(_AudioModule);
+
+  var _EnvironmentModule = _require(_dependencyMap[20], "./Modules/EnvironmentModule");
+
+  var _EnvironmentModule2 = _interopRequireDefault(_EnvironmentModule);
+
+  var _VideoModule = _require(_dependencyMap[21], "./Modules/VideoModule");
+
+  var _VideoModule2 = _interopRequireDefault(_VideoModule);
+
+  var _Runtime = _require(_dependencyMap[22], "./Runtime/Runtime");
+
+  var _Runtime2 = _interopRequireDefault(_Runtime);
+
+  var _Math = _require(_dependencyMap[23], "./Utils/Math");
+
+  var _eventemitter = _require(_dependencyMap[24], "eventemitter3");
+
+  var _eventemitter2 = _interopRequireDefault(_eventemitter);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+  function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var DEFAULT_SURFACE_DEPTH = 4;
+
+  var ReactInstance = function () {
+    function ReactInstance(bundle, parent) {
+      var _this = this;
+
+      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+      _classCallCheck(this, ReactInstance);
+
+      this._surfaceNameOffset = 0;
+      this.enterVR = this.enterVR.bind(this);
+      this.frame = this.frame.bind(this);
+      this._onResize = this._onResize.bind(this);
+      this._appearanceStateStack = [];
+      this._cameraPosition = [0, 0, 0];
+      this._cameraQuat = [0, 0, 0, 1];
+      this._events = [];
+      this._needsResize = false;
+      this._parent = parent;
+      this._rays = [];
+      this._frameData = null;
+
+      if ('VRFrameData' in window) {
+        this._frameData = new VRFrameData();
+      }
+
+      this._looping = false;
+      this._nextFrame = null;
+      this._lastFrameTime = 0;
+      this._focused2DSurface = null;
+      this._frameHook = options.frame;
+
+      if (options.fullScreen) {
+        parent.style.position = 'fixed';
+        parent.style.top = '0';
+        parent.style.left = '0';
+        parent.style.margin = '0';
+        parent.style.padding = '0';
+        parent.style.width = '100%';
+        parent.style.height = window.innerHeight + "px";
+        window.addEventListener('resize', this._onResize);
+      }
+
+      this._eventLayer = document.createElement('div');
+      this._eventLayer.style.width = parent.clientWidth + "px";
+      this._eventLayer.style.height = parent.clientHeight + "px";
+      parent.appendChild(this._eventLayer);
+      this.scene = new THREE.Scene();
+      this.controls = new _Controls2.default();
+      this.overlay = options.customOverlay || new _Overlay2.default(parent);
+      this.compositor = new _Compositor2.default(this._eventLayer, this.scene, options.customVideoPlayers);
+      var assetRoot = options.assetRoot || 'static_assets/';
+
+      if (!assetRoot.endsWith('/')) {
+        assetRoot += '/';
+      }
+
+      this._assetRoot = assetRoot;
+      var runtimeOptions = {
+        assetRoot: assetRoot,
+        customViews: options.customViews || [],
+        executor: options.executor,
+        nativeModules: [new _EnvironmentModule2.default(this.compositor.getEnvironment()), function (ctx) {
+          var audio = new _AudioModule2.default(ctx);
+          _this._audioModule = audio;
+          return audio;
+        }, function (ctx) {
+          var video = new _VideoModule2.default(ctx, _this.compositor.getVideoPlayerManager());
+          _this._videoModule = video;
+          return video;
+        }].concat(_toConsumableArray(options.nativeModules || []))
+      };
+      this.runtime = new _Runtime2.default(this.scene, (0, _bundleFromLocation2.default)(bundle), runtimeOptions);
+      this.vrState = new _VRState2.default();
+      this.vrState.onDisplayChange(function (display) {
+        if (display) {
+          _this.overlay.setVRButtonState(true, 'View in VR', _this.enterVR);
+        } else {
+          _this.overlay.setVRButtonState(false, 'No Headset', null);
+        }
+      });
+      this.vrState.onExit(this._onExitVR.bind(this));
+      this.eventEmitter = new _eventemitter2.default();
+      this.controls.addCameraController(new _DeviceOrientationCameraController2.default(this._eventLayer));
+      this.controls.addCameraController(new _MousePanCameraController2.default(this._eventLayer));
+      this.controls.addCameraController(new _ScrollPanCameraController2.default(this._eventLayer));
+      this.controls.addEventChannel(new _MouseInputChannel2.default(this._eventLayer));
+      this.controls.addEventChannel(new _TouchInputChannel2.default(this._eventLayer));
+      this.controls.addEventChannel(new _KeyboardInputChannel2.default());
+      this.controls.addEventChannel(new _GamepadInputChannel2.default());
+      this.controls.addRaycaster(new _ControllerRaycaster2.default());
+      this.controls.addRaycaster(new _MouseRaycaster2.default(this._eventLayer));
+      this.controls.addRaycaster(new _TouchRaycaster2.default(this._eventLayer));
+    }
+
+    _createClass(ReactInstance, [{
+      key: "emitEvent",
+      value: function emitEvent(event) {
+        this.eventEmitter.emit(event.type, event);
+      }
+    }, {
+      key: "_onResize",
+      value: function _onResize() {
+        var display = this.vrState.getCurrentDisplay();
+
+        if (display && display.isPresenting) {
+          return;
+        }
+
+        this._needsResize = true;
+      }
+    }, {
+      key: "createRoot",
+      value: function createRoot(name) {
+        var initialProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        return {
+          name: name,
+          initialProps: initialProps
+        };
+      }
+    }, {
+      key: "frame",
+      value: function frame(ms) {
+        var frameStart = ms || 0;
+
+        if (this._lastFrameTime === 0) {
+          this._lastFrameTime = frameStart;
+        }
+
+        var delta = Math.min(frameStart - this._lastFrameTime, 100);
+        this._lastFrameTime = frameStart;
+
+        if (this._needsResize) {
+          var _height = window.innerHeight;
+          var _width = this._parent.clientWidth;
+          this._parent.style.height = _height + "px";
+          this.resize(_width, _height);
+          this._needsResize = false;
+        }
+
+        this._events.length = 0;
+        this._rays.length = 0;
+        this.controls.fillEvents(this._events);
+        this.controls.fillRays(this._rays);
+        var display = this.vrState.getCurrentDisplay();
+        var frameData = this._frameData;
+
+        if (this._focused2DSurface) {
+          this._cameraPosition[0] = 0;
+          this._cameraPosition[1] = 0;
+          this._cameraPosition[2] = 0;
+          this._cameraQuat[0] = 0;
+          this._cameraQuat[1] = 0;
+          this._cameraQuat[2] = 0;
+          this._cameraQuat[3] = 1;
+        } else if (display && display.isPresenting && frameData) {
+          display.getFrameData(frameData);
+          var pose = frameData.pose;
+
+          if (pose.position) {
+            var position = pose.position;
+            this._cameraPosition[0] = position[0];
+            this._cameraPosition[1] = position[1];
+            this._cameraPosition[2] = position[2];
+          }
+
+          if (pose.orientation) {
+            var orientation = pose.orientation;
+            this._cameraQuat[0] = orientation[0];
+            this._cameraQuat[1] = orientation[1];
+            this._cameraQuat[2] = orientation[2];
+            this._cameraQuat[3] = orientation[3];
+          }
+        } else {
+          this.controls.fillCameraProperties(this._cameraPosition, this._cameraQuat);
+        }
+
+        if (this._rays.length > 0) {
+          for (var i = 0; i < this._rays.length; i++) {
+            var ray = this._rays[i];
+
+            if (!ray.hasAbsoluteCoordinates) {
+              ray.origin[0] += this._cameraPosition[0];
+              ray.origin[1] += this._cameraPosition[1];
+              ray.origin[2] += this._cameraPosition[2];
+              (0, _Math.rotateByQuaternion)(ray.direction, this._cameraQuat);
+            }
+          }
+        }
+
+        if (this._focused2DSurface) {
+          this.runtime.set2DRays(this._rays, this._focused2DSurface);
+        } else {
+          this.runtime.setRays(this._rays, this._cameraPosition, this._cameraQuat);
+        }
+
+        this.runtime.queueEvents(this._events);
+        this.runtime.frame(this.compositor.getCamera(), this.compositor.getRenderer());
+
+        if (this._audioModule) {
+          var audioModule = this._audioModule;
+
+          audioModule._setCameraParameters(this._cameraPosition, this._cameraQuat);
+
+          audioModule.frame(delta);
+        }
+
+        if (this._frameHook) {
+          this._frameHook(frameStart);
+        }
+
+        this.compositor.frame(delta);
+        var cursorVis = this.compositor.getCursorVisibility();
+
+        if (cursorVis !== 'hidden' && this.runtime.isCursorActive()) {
+          this.compositor.updateCursor(this._rays, this.runtime.getCursorDepth());
+        } else if (cursorVis === 'visible') {
+          this.compositor.updateCursor(this._rays, DEFAULT_SURFACE_DEPTH);
+        } else {
+          this.compositor.updateCursor(null, 0);
+        }
+
+        this.overlay.setCameraRotation(this._cameraQuat);
+        this.compositor.setMouseCursorActive(this.runtime.isMouseCursorActive());
+
+        if (display && display.isPresenting && frameData) {
+          this.compositor.renderVR(display, frameData);
+
+          if (this._looping) {
+            if (this._nextFrame) {
+              var nextFrame = this._nextFrame;
+              nextFrame.vr = true;
+              nextFrame.id = display.requestAnimationFrame(this.frame);
+            } else {
+              this._nextFrame = {
+                vr: true,
+                id: display.requestAnimationFrame(this.frame)
+              };
+            }
+          }
+        } else if (this._focused2DSurface) {
+          this.compositor.renderSurface(this._focused2DSurface);
+
+          if (this._looping) {
+            if (this._nextFrame) {
+              var _nextFrame = this._nextFrame;
+              _nextFrame.vr = false;
+              _nextFrame.id = requestAnimationFrame(this.frame);
+            } else {
+              this._nextFrame = {
+                vr: false,
+                id: requestAnimationFrame(this.frame)
+              };
+            }
+          }
+        } else {
+          this.compositor.render(this._cameraPosition, this._cameraQuat);
+
+          if (this._looping) {
+            if (this._nextFrame) {
+              var _nextFrame2 = this._nextFrame;
+              _nextFrame2.vr = false;
+              _nextFrame2.id = requestAnimationFrame(this.frame);
+            } else {
+              this._nextFrame = {
+                vr: false,
+                id: requestAnimationFrame(this.frame)
+              };
+            }
+          }
+        }
+      }
+    }, {
+      key: "getDefaultSurface",
+      value: function getDefaultSurface() {
+        return this.compositor.getDefaultSurface();
+      }
+    }, {
+      key: "getDefaultLocation",
+      value: function getDefaultLocation() {
+        if (!this._defaultLocation) {
+          this._defaultLocation = new _Location2.default();
+        }
+
+        return this._defaultLocation;
+      }
+    }, {
+      key: "renderToSurface",
+      value: function renderToSurface(root, surface, surfaceName) {
+        if (!this._looping) {
+          this.start();
+        }
+
+        var isDefaultSurface = surface === this.compositor.getDefaultSurface();
+
+        if (!isDefaultSurface && surfaceName === 'default') {
+          throw new Error('Only default surface can use "default" as surface name.');
+        }
+
+        var _surfaceName = surfaceName ? surfaceName : isDefaultSurface ? 'default' : "surface_" + this._surfaceNameOffset++;
+
+        var tag = this.runtime.createRootView(root.name, root.initialProps, surface, _surfaceName);
+        this.compositor.showSurface(surface);
+
+        if (_surfaceName !== 'default') {
+          this.compositor.registerSurface(_surfaceName, surface);
+        }
+
+        return tag;
+      }
+    }, {
+      key: "renderToLocation",
+      value: function renderToLocation(root, location) {
+        if (!this._looping) {
+          this.start();
+        }
+
+        return this.runtime.createRootView(root.name, root.initialProps, location);
+      }
+    }, {
+      key: "detachRoot",
+      value: function detachRoot(tag) {
+        var rootInfo = this.runtime.getSurfaceInfo(tag);
+
+        if (rootInfo) {
+          this.compositor.hideSurface(rootInfo.surface);
+
+          if (rootInfo.name !== 'default') {
+            this.compositor.unregisterSurface(rootInfo.name);
+          }
+        }
+
+        this.runtime.destroyRootView(tag);
+      }
+    }, {
+      key: "focusSurface",
+      value: function focusSurface(name) {
+        var surface = name ? this.compositor.getSurface(name) : this.compositor.getDefaultSurface();
+
+        if (!surface) {
+          throw new Error("Cannot focus Surface " + (name || '') + ", it is not registered");
+        }
+
+        var canvas = this.compositor.getCanvas();
+
+        this._appearanceStateStack.push({
+          height: canvas.clientHeight,
+          surface: this._focused2DSurface,
+          width: canvas.clientWidth
+        });
+
+        this._focused2DSurface = surface;
+        this.resize(surface.getWidth(), surface.getHeight());
+        this.overlay.hide();
+      }
+    }, {
+      key: "releaseSurface",
+      value: function releaseSurface() {
+        var lastAppearanceState = this._appearanceStateStack.pop();
+
+        if (lastAppearanceState) {
+          this._focused2DSurface = lastAppearanceState.surface;
+          this.resize(lastAppearanceState.width, lastAppearanceState.height);
+        }
+
+        if (!lastAppearanceState || !lastAppearanceState.surface) {
+          this._focused2DSurface = null;
+          this.overlay.show();
+        }
+      }
+    }, {
+      key: "start",
+      value: function start() {
+        if (this._looping) {
+          return;
+        }
+
+        this._looping = true;
+        this.frame(0);
+      }
+    }, {
+      key: "stop",
+      value: function stop() {
+        this._looping = false;
+        var nextFrame = this._nextFrame;
+
+        if (nextFrame) {
+          var display = this.vrState.getCurrentDisplay();
+
+          if (display && display.isPresenting) {
+            if (nextFrame.vr) {
+              display.cancelAnimationFrame(nextFrame.id);
+            }
+          } else if (!nextFrame.vr) {
+            cancelAnimationFrame(nextFrame.id);
+          }
+
+          this._nextFrame = null;
+        }
+      }
+    }, {
+      key: "enterVR",
+      value: function enterVR() {
+        var _this2 = this;
+
+        this.emitEvent({
+          type: 'entervr',
+          timeStamp: Date.now(),
+          payload: {
+            stage: 'attempt'
+          }
+        });
+        var display = this.vrState.getCurrentDisplay();
+
+        if (!display || display.isPresenting) {
+          var _error = display ? 'VR Display is already presenting.' : 'No VR Display is connected.';
+
+          this.emitEvent({
+            type: 'entervr',
+            timeStamp: Date.now(),
+            error: _error,
+            payload: {
+              stage: 'failed'
+            }
+          });
+          return;
+        }
+
+        display.requestPresent([{
+          source: this.compositor.getCanvas()
+        }]).then(function () {
+          _this2.emitEvent({
+            type: 'entervr',
+            timeStamp: Date.now(),
+            payload: {
+              stage: 'succeed'
+            }
+          });
+
+          var leftParams = display.getEyeParameters('left');
+          var rightParams = display.getEyeParameters('right');
+
+          _this2.compositor.resize(leftParams.renderWidth + rightParams.renderWidth, Math.min(leftParams.renderHeight, rightParams.renderHeight), 1);
+        }).catch(function () {
+          _this2.emitEvent({
+            type: 'entervr',
+            timeStamp: Date.now(),
+            error: 'Failed request presenting in VR Display',
+            payload: {
+              stage: 'failed'
+            }
+          });
+        });
+      }
+    }, {
+      key: "_onExitVR",
+      value: function _onExitVR() {
+        this.emitEvent({
+          type: 'exitvr',
+          timeStamp: Date.now()
+        });
+        this._needsResize = true;
+      }
+    }, {
+      key: "resize",
+      value: function resize(width, height) {
+        this._eventLayer.style.width = width + "px";
+        this._eventLayer.style.height = height + "px";
+        this.compositor.resizeCanvas(width, height);
+      }
+    }, {
+      key: "getAssetURL",
+      value: function getAssetURL(localPath) {
+        return this._assetRoot + localPath;
+      }
+    }, {
+      key: "getCameraPosition",
+      value: function getCameraPosition() {
+        return this._cameraPosition;
+      }
+    }, {
+      key: "getCameraQuaternion",
+      value: function getCameraQuaternion() {
+        return this._cameraQuat;
+      }
+    }]);
+
+    return ReactInstance;
+  }();
+
+  exports.default = ReactInstance;
+});

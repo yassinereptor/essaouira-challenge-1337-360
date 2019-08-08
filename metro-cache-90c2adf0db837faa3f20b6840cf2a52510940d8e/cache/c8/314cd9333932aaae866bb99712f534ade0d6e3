@@ -1,0 +1,70 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var MouseInputChannel = function () {
+    function MouseInputChannel(target) {
+      _classCallCheck(this, MouseInputChannel);
+
+      this._batchedEvents = [];
+      this._onMouseDown = this._onMouseDown.bind(this);
+      this._onMouseUp = this._onMouseUp.bind(this);
+      target.addEventListener('mousedown', this._onMouseDown, true);
+      target.addEventListener('mouseup', this._onMouseUp, true);
+    }
+
+    _createClass(MouseInputChannel, [{
+      key: "_onMouseDown",
+      value: function _onMouseDown(e) {
+        var event = {
+          type: 'button',
+          button: e.button,
+          action: 'down',
+          source: 'mouse'
+        };
+
+        if (e.button === 0) {
+          event.buttonClass = 'confirm';
+        }
+
+        this._batchedEvents.push(event);
+      }
+    }, {
+      key: "_onMouseUp",
+      value: function _onMouseUp(e) {
+        var event = {
+          type: 'button',
+          button: e.button,
+          action: 'up',
+          source: 'mouse'
+        };
+
+        if (e.button === 0) {
+          event.buttonClass = 'confirm';
+        }
+
+        this._batchedEvents.push(event);
+      }
+    }, {
+      key: "getEvents",
+      value: function getEvents(acc) {
+        var events = this._batchedEvents;
+
+        for (var i = 0, len = events.length; i < len; i++) {
+          acc.push(events[i]);
+        }
+
+        events.length = 0;
+      }
+    }]);
+
+    return MouseInputChannel;
+  }();
+
+  exports.default = MouseInputChannel;
+});

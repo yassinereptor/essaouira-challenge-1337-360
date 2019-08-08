@@ -1,0 +1,98 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = createRootView;
+
+  var _ReactExecutorWebWorker = _require(_dependencyMap[0], "./Executor/ReactExecutorWebWorker");
+
+  var _ReactExecutorWebWorker2 = _interopRequireDefault(_ReactExecutorWebWorker);
+
+  var _ReactNativeContext = _require(_dependencyMap[1], "./ReactNativeContext");
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  var DEVTOOLS_FLAG = /\bdevtools\b/;
+  var HOTRELOAD_FLAG = /\bhotreload\b/;
+
+  function createRootView(guisys, name) {
+    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+    if (!guisys) {
+      throw new Error('ReactVR Root View must attach to an OVRUI GUI!');
+    }
+
+    if (!name || typeof name !== 'string') {
+      throw new Error('ReactVR Root View must have a module name to mount');
+    }
+
+    var enableDevTools = false;
+
+    if (__DEV__) {
+      if (DEVTOOLS_FLAG.test(location.search)) {
+        enableDevTools = true;
+
+        if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+          console.log('We detected that you have the React Devtools extension installed. ' + 'Please note that at this time, React VR is only compatible with the ' + 'standalone Inspector (npm run devtools).');
+        }
+      }
+    }
+
+    var initialProps = options.initialProps || {};
+    var contextOptions = {
+      isLowLatency: !!options.isLowLatency,
+      customViews: options.customViews
+    };
+
+    if (options.assetRoot) {
+      contextOptions.assetRoot = options.assetRoot;
+    }
+
+    if (HOTRELOAD_FLAG.test(location.search)) {
+      contextOptions.enableHotReload = true;
+    }
+
+    if (options.enableHotReload) {
+      contextOptions.enableHotReload = options.enableHotReload;
+    }
+
+    var executor = options.executor || new _ReactExecutorWebWorker2.default({
+      enableDevTools: enableDevTools
+    });
+    var bundleURL = options.bundle || '../index.bundle?platform=vr';
+
+    if (contextOptions.enableHotReload) {
+      bundleURL += '&hot=true';
+    }
+
+    var rn = new _ReactNativeContext.ReactNativeContext(guisys, executor, contextOptions);
+
+    if (Array.isArray(options.nativeModules)) {
+      for (var _iterator = options.nativeModules, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[typeof Symbol === "function" ? Symbol.iterator : "@@iterator"]();;) {
+        var _ref;
+
+        if (_isArray) {
+          if (_i >= _iterator.length) break;
+          _ref = _iterator[_i++];
+        } else {
+          _i = _iterator.next();
+          if (_i.done) break;
+          _ref = _i.value;
+        }
+
+        var module = _ref;
+        rn.registerModule(module);
+      }
+    }
+
+    rn.init(bundleURL);
+    var rootTag = rn.createRootView(name, initialProps);
+    return {
+      context: rn,
+      frame: function frame(camera) {
+        rn.frame(camera, rootTag);
+      },
+      rootTag: rootTag
+    };
+  }
+});

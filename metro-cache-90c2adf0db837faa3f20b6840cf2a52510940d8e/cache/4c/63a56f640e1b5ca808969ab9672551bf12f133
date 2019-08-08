@@ -1,0 +1,201 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  _require(_dependencyMap[0], "../Controls/Types");
+
+  var _Glyphs = _require(_dependencyMap[1], "./Glyphs");
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function setStyles(node, styles) {
+    var style = node.style;
+
+    for (var property in styles) {
+      var destination = property;
+
+      if (!style.hasOwnProperty(destination)) {
+        var uppercase = destination[0].toUpperCase() + destination.substr(1);
+
+        if (style.hasOwnProperty("moz" + uppercase)) {
+          destination = "moz" + uppercase;
+        } else if (style.hasOwnProperty("webkit" + uppercase)) {
+          destination = "webkit" + uppercase;
+        }
+      }
+
+      node.style[destination] = styles[property];
+    }
+  }
+
+  var WRAPPER_STYLES = {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    pointerEvents: 'none',
+    userSelect: 'none'
+  };
+  var COMPASS_WRAPPER_STYLES = {
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: '100%',
+    height: '30px',
+    marginTop: '-20px',
+    padding: '5px',
+    position: 'absolute',
+    right: '20px',
+    top: '50%',
+    width: '30px'
+  };
+  var COMPASS_STYLES = {
+    cursor: 'pointer',
+    pointerEvents: 'initial',
+    transformOrigin: '50% 50%'
+  };
+  var VR_BUTTON_STYLES = {
+    background: 'rgba(0, 0, 0, 0.7)',
+    border: '2px solid #ffffff',
+    borderRadius: '5px',
+    bottom: '20px',
+    color: '#ffffff',
+    cursor: 'pointer',
+    display: 'none',
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    fontSize: '16px',
+    fontWeight: 'normal',
+    height: '38px',
+    left: '18px',
+    padding: '0 10px',
+    pointerEvents: 'initial',
+    position: 'absolute'
+  };
+  var VR_BUTTON_LABEL_STYLES = {
+    display: 'inline-block',
+    lineHeight: '38px',
+    marginLeft: '10px',
+    verticalAlign: 'top'
+  };
+
+  var Overlay = function () {
+    function Overlay(frame) {
+      var _this = this;
+
+      _classCallCheck(this, Overlay);
+
+      this._wrapper = document.createElement('div');
+      setStyles(this._wrapper, WRAPPER_STYLES);
+      frame.appendChild(this._wrapper);
+      var frameStyle = window.getComputedStyle(frame);
+
+      if (frameStyle.position === 'static' || frameStyle.position === '') {
+        frame.style.position = 'relative';
+      }
+
+      this._vrButton = document.createElement('a');
+      setStyles(this._vrButton, VR_BUTTON_STYLES);
+      var vrGlyph = (0, _Glyphs.createViewInVrGlyph)(38, 38, '#ffffff');
+
+      this._vrButton.appendChild(vrGlyph);
+
+      var vrButtonLabel = document.createElement('span');
+      setStyles(vrButtonLabel, VR_BUTTON_LABEL_STYLES);
+
+      this._vrButton.appendChild(vrButtonLabel);
+
+      this._vrButtonText = document.createTextNode('View in VR');
+      vrButtonLabel.appendChild(this._vrButtonText);
+
+      this._vrButton.addEventListener('click', function () {
+        if (_this._vrButtonHandler) {
+          _this._vrButtonHandler();
+        }
+      });
+
+      this._vrButton.addEventListener('touchend', function () {
+        if (_this._vrButtonHandler) {
+          _this._vrButtonHandler();
+        }
+      });
+
+      this._vrButton.style.display = 'none';
+
+      this._wrapper.appendChild(this._vrButton);
+
+      var compassWrapper = document.createElement('div');
+      setStyles(compassWrapper, COMPASS_WRAPPER_STYLES);
+      this._compass = (0, _Glyphs.createCompassGlyph)(30, 30, '#ffffff');
+      setStyles(this._compass, COMPASS_STYLES);
+      compassWrapper.appendChild(this._compass);
+
+      this._wrapper.appendChild(compassWrapper);
+    }
+
+    _createClass(Overlay, [{
+      key: "enableVRButton",
+      value: function enableVRButton() {
+        this._vrButton.style.display = 'block';
+      }
+    }, {
+      key: "disableVRButton",
+      value: function disableVRButton() {
+        this._vrButton.style.display = 'none';
+      }
+    }, {
+      key: "setVRButtonText",
+      value: function setVRButtonText(text) {
+        this._vrButtonText.nodeValue = text;
+      }
+    }, {
+      key: "setVRButtonHandler",
+      value: function setVRButtonHandler(handler) {
+        this._vrButtonHandler = handler;
+      }
+    }, {
+      key: "setVRButtonState",
+      value: function setVRButtonState(visible, text, handler) {
+        if (visible) {
+          this.enableVRButton();
+        } else {
+          this.disableVRButton();
+        }
+
+        this.setVRButtonText(text);
+        this.setVRButtonHandler(handler);
+      }
+    }, {
+      key: "setCameraRotation",
+      value: function setCameraRotation(quat) {
+        var x = quat[0];
+        var y = quat[1];
+        var z = quat[2];
+        var w = quat[3];
+        var xx = x * x;
+        var yy = y * y;
+        var s = 1 / (xx + yy + z * z + w * w);
+        var projectX = -2 * s * (x * z + y * w);
+        var projectZ = -1 + 2 * s * (xx + yy);
+        var projectMag = Math.sqrt(projectX * projectX + projectZ * projectZ);
+        var compassAngle = (projectX > 0 ? 1 : -1) * Math.acos(-1 * projectZ / projectMag);
+        this._compass.style.transform = "rotate(" + compassAngle + "rad)";
+      }
+    }, {
+      key: "hide",
+      value: function hide() {
+        this._wrapper.style.display = 'none';
+      }
+    }, {
+      key: "show",
+      value: function show() {
+        this._wrapper.style.display = 'block';
+      }
+    }]);
+
+    return Overlay;
+  }();
+
+  exports.default = Overlay;
+});

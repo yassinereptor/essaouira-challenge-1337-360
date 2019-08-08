@@ -1,0 +1,158 @@
+
+> vr_view@0.0.1 start /root/essaouira_challenge
+> node node_modules/react-360/scripts/packager.js "--reset-cache"
+
+open browser at http://localhost:8081/index.html
+
+
+Starting React Native Packager...
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  Running Metro Bundler on port 8081.                                         │
+│                                                                              │
+│  Keep Metro running while developing on any JS projects. Feel free to        │
+│  close this tab and run your own Metro instance if you prefer.               │
+│                                                                              │
+│  https://github.com/facebook/react-native                                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Looking for JS files in
+   /root/essaouira_challenge 
+
+
+Metro Bundler ready.
+
+Loading dependency graph, done.
+warning: the transform cache was reset.
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (142/142), done.
+
+An error occurred during the packager process. Exited with code null.
+Look at the packager output above to see what went wrong.
+npm ERR! code ELIFECYCLE
+npm ERR! errno 1
+npm ERR! vr_view@0.0.1 start: `node node_modules/react-360/scripts/packager.js "--reset-cache"`
+npm ERR! Exit status 1
+npm ERR! 
+npm ERR! Failed at the vr_view@0.0.1 start script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /root/.npm/_logs/2019-07-24T15_04_45_691Z-debug.log
+
+> vr_view@0.0.1 start /root/essaouira_challenge
+> node node_modules/react-360/scripts/packager.js
+
+open browser at http://localhost:8081/index.html
+
+
+Starting React Native Packager...
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  Running Metro Bundler on port 8081.                                         │
+│                                                                              │
+│  Keep Metro running while developing on any JS projects. Feel free to        │
+│  close this tab and run your own Metro instance if you prefer.               │
+│                                                                              │
+│  https://github.com/facebook/react-native                                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Looking for JS files in
+   /root/essaouira_challenge 
+
+
+Metro Bundler ready.
+
+Loading dependency graph, done.
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (142/142), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (518/518), done.
+
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:112.66.99.163 - - [25/Jul/2019:00:59:13 +0000] "GET /currentsetting.htm HTTP/1.1" 404 157 "-" "-"
+::ffff:222.79.48.124 - - [25/Jul/2019:00:59:14 +0000] "GET /winbox.png HTTP/1.1" 404 149 "-" "-"
+::ffff:1.202.112.229 - - [25/Jul/2019:00:59:15 +0000] "GET /cgi-bin/nobody/Machine.cgi?action=get_capability HTTP/1.1" 404 165 "-" "-"
+::ffff:182.200.176.156 - - [25/Jul/2019:00:59:15 +0000] "GET /cgi-bin/user/Config.cgi?.cab&action=get&category=Account.* HTTP/1.1" 404 162 "-" "-"
+::ffff:58.248.202.251 - - [25/Jul/2019:00:59:16 +0000] "GET /device_description.xml HTTP/1.1" 404 161 "-" "-"
+::ffff:116.252.0.226 - - [25/Jul/2019:00:59:16 +0000] "GET /current_config/passwd HTTP/1.1" 404 160 "-" "-"
+::ffff:221.13.12.99 - - [25/Jul/2019:00:59:17 +0000] "GET /login/login.html HTTP/1.1" 404 155 "-" "-"
+::ffff:5.188.210.101 - - [26/Jul/2019:11:25:26 +0000] "GET http://5.188.210.101/echo.php HTTP/1.1" 404 147 "https://www.google.com/" "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"
+::ffff:162.243.150.138 - - [28/Jul/2019:00:27:52 +0000] "GET /manager/text/list HTTP/1.1" 404 156 "-" "Mozilla/5.0 zgrab/0.x"
+::ffff:162.243.150.154 - - [28/Jul/2019:03:03:20 +0000] "GET /manager/html HTTP/1.1" 404 151 "-" "Mozilla/5.0 zgrab/0.x"
+::ffff:13.229.76.21 - - [30/Jul/2019:12:34:44 +0000] "GET /manager/html HTTP/1.1" 404 151 "-" "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)"
+::ffff:62.251.161.88 - - [31/Jul/2019:17:54:35 +0000] "GET /robots.txt HTTP/1.1" 404 149 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36"
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:62.251.161.88 - - [31/Jul/2019:17:54:38 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "http://167.71.71.230:8081/index.html" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36"
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:62.251.161.88 - - [01/Aug/2019:08:06:43 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "http://167.71.71.230:8081/index.html" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+ MAP  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (142/142), done.
+
+ MAP  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (518/518), done.
+
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:62.251.161.88 - - [01/Aug/2019:09:08:37 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 12_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/75.0.3770.103 Mobile/15E148 Safari/605.1"
+ MAP  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ MAP  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ MAP  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ MAP  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:62.251.161.88 - - [01/Aug/2019:10:39:58 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "http://167.71.71.230:8081/index.html" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36"
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:62.251.161.88 - - [01/Aug/2019:11:06:11 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 12_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/75.0.3770.103 Mobile/15E148 Safari/605.1"
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:105.153.7.148 - - [01/Aug/2019:11:07:53 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "http://167.71.71.230:8081/index.html" "Mozilla/5.0 (iPhone; CPU iPhone OS 12_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1"
+::ffff:80.24.191.81 - - [01/Aug/2019:13:26:06 +0000] "GET /manager/html HTTP/1.1" 404 151 "-" "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)"
+::ffff:110.249.212.46 - - [02/Aug/2019:03:23:21 +0000] "GET http://110.249.212.46/testget?q=23333&port=8081 HTTP/1.1" 404 146 "-" "-"
+::ffff:110.249.212.46 - - [02/Aug/2019:03:23:22 +0000] "GET http://110.249.212.46/testget?q=23333&port=8081 HTTP/1.1" 404 146 "-" "-"
+::ffff:52.172.140.192 - - [02/Aug/2019:04:22:27 +0000] "GET /HNAP1/ HTTP/1.1" 404 145 "http://167.71.71.230:8081/" "Mozilla/5.0 (Windows NT 5.1; rv:9.0.1) Gecko/20100101 Firefox/9.0.1"
+::ffff:5.188.210.101 - - [02/Aug/2019:04:53:26 +0000] "GET http://5.188.210.101/echo.php HTTP/1.1" 404 147 "https://www.google.com/" "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:62.251.161.88 - - [02/Aug/2019:09:35:53 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "http://167.71.71.230:8081/index.html" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+::ffff:91.195.99.114 - - [03/Aug/2019:00:29:49 +0000] "GET http://172.247.32.25/ddd.html HTTP/1.1" 404 147 "-" "ProxyChecker/1.0"
+::ffff:13.228.70.189 - - [03/Aug/2019:04:26:26 +0000] "GET /manager/html HTTP/1.1" 404 151 "-" "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)"
+::ffff:107.170.203.106 - - [04/Aug/2019:00:27:41 +0000] "GET /manager/text/list HTTP/1.1" 404 156 "-" "Mozilla/5.0 zgrab/0.x"
+::ffff:107.170.196.63 - - [04/Aug/2019:04:08:56 +0000] "GET /manager/html HTTP/1.1" 404 151 "-" "Mozilla/5.0 zgrab/0.x"
+::ffff:193.29.15.60 - - [04/Aug/2019:05:37:11 +0000] "POST /json_rpc HTTP/1.0" 404 148 "-" "-"
+ BUNDLE  [vr, dev] ./client.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+ BUNDLE  [vr, dev] ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100.0% (1/1), done.
+
+::ffff:62.251.161.88 - - [04/Aug/2019:15:39:17 +0000] "GET /favicon.ico HTTP/1.1" 404 150 "http://167.71.71.230:8081/index.html" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+::ffff:110.249.212.46 - - [06/Aug/2019:13:55:30 +0000] "GET http://110.249.212.46/testget?q=23333&port=8081 HTTP/1.1" 404 146 "-" "-"

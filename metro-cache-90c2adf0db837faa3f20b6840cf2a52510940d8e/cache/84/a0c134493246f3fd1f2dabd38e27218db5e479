@@ -1,0 +1,23 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = bundleFromLocation;
+
+  function bundleFromLocation(root) {
+    var path = location.pathname;
+
+    try {
+      var absoluteURL = new URL(root);
+      return absoluteURL.toString();
+    } catch (error) {
+      if (!path.endsWith('/')) {
+        path = path.substr(0, path.lastIndexOf('/'));
+      } else {
+        path = path.substr(0, path.length - 1);
+      }
+
+      return location.protocol + "//" + location.host + path + "/" + root;
+    }
+  }
+});

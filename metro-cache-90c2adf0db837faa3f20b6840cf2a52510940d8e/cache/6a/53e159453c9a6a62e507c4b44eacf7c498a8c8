@@ -1,0 +1,209 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  _require(_dependencyMap[0], "../Compositor/Video/Types");
+
+  var _VideoPlayer = _require(_dependencyMap[1], "../Compositor/Video/VideoPlayer");
+
+  var _VideoPlayer2 = _interopRequireDefault(_VideoPlayer);
+
+  var _Module2 = _require(_dependencyMap[2], "./Module");
+
+  var _Module3 = _interopRequireDefault(_Module2);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+  function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+  function getExt(url) {
+    var fileurl = url.substr(url.lastIndexOf("/") + 1);
+    return fileurl.split('?')[0].split('#')[0].substr(fileurl.lastIndexOf('.') + 1);
+  }
+
+  var VideoModule = function (_Module) {
+    _inherits(VideoModule, _Module);
+
+    function VideoModule(ctx, videoPlayers) {
+      _classCallCheck(this, VideoModule);
+
+      var _this = _possibleConstructorReturn(this, (VideoModule.__proto__ || Object.getPrototypeOf(VideoModule)).call(this, 'VideoModule'));
+
+      _this._rnctx = ctx;
+      _this._videoPlayers = videoPlayers;
+      _this.allowCreatePlayer = true;
+      _this.maxPlayers = -1;
+      return _this;
+    }
+
+    _createClass(VideoModule, [{
+      key: "_applyParams",
+      value: function _applyParams(player, params) {
+        if (params.muted !== undefined) {
+          player.setMuted(!!params.muted);
+        }
+
+        if (params.volume !== undefined) {
+          player.setVolume(params.volume);
+        }
+      }
+    }, {
+      key: "_onVideoEvents",
+      value: function _onVideoEvents(handle, event) {
+        var type = event.type,
+            target = event.target,
+            videoEvent = _objectWithoutProperties(event, ["type", "target"]);
+
+        this._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', ['onVideoStatusChanged', _extends({
+          player: handle
+        }, videoEvent)]);
+      }
+    }, {
+      key: "createPlayer",
+      value: function createPlayer(handle) {
+        var _this2 = this;
+
+        this._videoPlayers.createPlayer(handle);
+
+        var player = this._videoPlayers.getPlayer(handle);
+
+        player && player.addEventListener('status', function (event) {
+          _this2._onVideoEvents(handle, event);
+        });
+      }
+    }, {
+      key: "destroyPlayer",
+      value: function destroyPlayer(handle) {
+        this._videoPlayers.destroyPlayer(handle);
+      }
+    }, {
+      key: "play",
+      value: function play(handle, options) {
+        var player = this._videoPlayers.getPlayer(handle);
+
+        if (!player) {
+          return;
+        }
+
+        var source = options.source,
+            autoPlay = options.autoPlay,
+            startPosition = options.startPosition,
+            params = _objectWithoutProperties(options, ["source", "autoPlay", "startPosition"]);
+
+        var url = null;
+        var fileFormat = null;
+
+        if (Array.isArray(source)) {
+          url = source[0].url;
+
+          var supported = this._videoPlayers.getSupportedFormats();
+
+          for (var i = 0; i < source.length; i++) {
+            var sourceOption = source[i];
+            var format = sourceOption.fileFormat || getExt(sourceOption.url);
+
+            if (supported.indexOf(format) > -1) {
+              url = sourceOption.url;
+              fileFormat = format;
+              break;
+            }
+          }
+        } else {
+          fileFormat = source.fileFormat || getExt(source.url);
+          url = source.url;
+        }
+
+        if (!url || !fileFormat) {
+          throw new Error('Cannot play video, unsupported format');
+        }
+
+        var stereoFormat = params.stereo || '2D';
+        var layout = params.layout || 'RECT';
+        player.setSource(url, stereoFormat, fileFormat, layout);
+
+        this._applyParams(player, params);
+
+        if (startPosition) {
+          player.seekTo(startPosition);
+        }
+
+        player.load().then(function () {
+          if (autoPlay !== false) {
+            player.play();
+          }
+        });
+      }
+    }, {
+      key: "pause",
+      value: function pause(handle) {
+        var player = this._videoPlayers.getPlayer(handle);
+
+        if (!player) {
+          return;
+        }
+
+        player.pause();
+      }
+    }, {
+      key: "resume",
+      value: function resume(handle) {
+        var player = this._videoPlayers.getPlayer(handle);
+
+        if (!player) {
+          return;
+        }
+
+        player.play();
+      }
+    }, {
+      key: "stop",
+      value: function stop(handle) {
+        var player = this._videoPlayers.getPlayer(handle);
+
+        if (!player) {
+          return;
+        }
+
+        player.pause();
+        player.seekTo(0);
+      }
+    }, {
+      key: "seek",
+      value: function seek(handle, timeMs) {
+        var player = this._videoPlayers.getPlayer(handle);
+
+        if (!player) {
+          return;
+        }
+
+        player.seekTo(timeMs);
+      }
+    }, {
+      key: "setParams",
+      value: function setParams(handle, options) {
+        var player = this._videoPlayers.getPlayer(handle);
+
+        if (!player) {
+          return;
+        }
+
+        this._applyParams(player, options);
+      }
+    }]);
+
+    return VideoModule;
+  }(_Module3.default);
+
+  exports.default = VideoModule;
+});

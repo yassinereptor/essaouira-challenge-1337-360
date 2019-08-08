@@ -1,0 +1,38 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _Module2 = _require(_dependencyMap[0], "./Module");
+
+  var _Module3 = _interopRequireDefault(_Module2);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+  function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+  var ReactVRConstants = function (_Module) {
+    _inherits(ReactVRConstants, _Module);
+
+    function ReactVRConstants() {
+      _classCallCheck(this, ReactVRConstants);
+
+      var _this = _possibleConstructorReturn(this, (ReactVRConstants.__proto__ || Object.getPrototypeOf(ReactVRConstants)).call(this, 'ReactVRConstants'));
+
+      _this.Version = '0.1.0';
+      _this.Runtime = 'WebVR';
+      _this.RuntimeVersion = _this.Version;
+      _this.userAgent = navigator && navigator.userAgent;
+      _this.platform = navigator && navigator.platform;
+      return _this;
+    }
+
+    return ReactVRConstants;
+  }(_Module3.default);
+
+  exports.default = ReactVRConstants;
+});

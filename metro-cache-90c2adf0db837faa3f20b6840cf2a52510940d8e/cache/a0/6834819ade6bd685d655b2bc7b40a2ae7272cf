@@ -1,0 +1,216 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _VRVideoPlayer = _require(_dependencyMap[0], "../Video/VRVideoPlayer");
+
+  var _VRVideoComponent = _require(_dependencyMap[1], "../Video/VRVideoComponent");
+
+  var _VRVideoComponent2 = _interopRequireDefault(_VRVideoComponent);
+
+  var _Module2 = _require(_dependencyMap[2], "./Module");
+
+  var _Module3 = _interopRequireDefault(_Module2);
+
+  var _MediaEvent = _require(_dependencyMap[3], "../Events/MediaEvent");
+
+  var _MediaEvent2 = _interopRequireDefault(_MediaEvent);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+  function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+  var MEDIA_EVENT_CALLBACK_NAME = {
+    canplay: 'onVideoCanPlay',
+    durationchange: 'onVideoDurationChange',
+    ended: 'onVideoEnded',
+    error: 'onVideoError',
+    timeupdate: 'onVideoTimeUpdate',
+    playing: 'onVideoPlaying',
+    pause: 'onVideoPause'
+  };
+
+  var RCTVideoModule = function (_Module) {
+    _inherits(RCTVideoModule, _Module);
+
+    function RCTVideoModule(rnctx) {
+      _classCallCheck(this, RCTVideoModule);
+
+      var _this = _possibleConstructorReturn(this, (RCTVideoModule.__proto__ || Object.getPrototypeOf(RCTVideoModule)).call(this, 'RCTVideoModule'));
+
+      _this.supportedFormats = (0, _VRVideoPlayer.getCustomizedSupportedFormats)() || [];
+      _this._videoDefs = {};
+      _this._players = {};
+      _this._rnctx = rnctx;
+      _this._mediaEventCallbacks = {};
+      return _this;
+    }
+
+    _createClass(RCTVideoModule, [{
+      key: "addHandle",
+      value: function addHandle(handle) {
+        var player = new _VRVideoComponent2.default();
+        this._players[handle] = player;
+        this._videoDefs[handle] = this._createVideoDef();
+        this._mediaEventCallbacks[handle] = {};
+        player.onMediaEvent = this._onMediaEvent.bind(this, handle);
+      }
+    }, {
+      key: "_createVideoDef",
+      value: function _createVideoDef() {
+        return {};
+      }
+    }, {
+      key: "_onMediaEvent",
+      value: function _onMediaEvent(handle, event) {
+        var eventType = event.type;
+
+        if (MEDIA_EVENT_CALLBACK_NAME[eventType]) {
+          var callbackName = MEDIA_EVENT_CALLBACK_NAME[eventType];
+          var mediaEvent = new _MediaEvent2.default(event);
+
+          this._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', [callbackName, handle, mediaEvent]);
+
+          var listeners = this._mediaEventCallbacks[handle] ? this._mediaEventCallbacks[handle][eventType] : null;
+
+          if (listeners) {
+            listeners.forEach(function (listener) {
+              return listener(handle, mediaEvent);
+            });
+          }
+        }
+      }
+    }, {
+      key: "_addMediaEventListener",
+      value: function _addMediaEventListener(handle, eventType, listener) {
+        if (!this._mediaEventCallbacks[handle]) {
+          console.warn('RCTVideoModule.addMediaEventListener: ' + ("can't add listener on a not exist handle: " + handle));
+          return;
+        }
+
+        if (!MEDIA_EVENT_CALLBACK_NAME[eventType]) {
+          console.warn('RCTVideoModule.addMediaEventListener: ' + ("can't add listener on a not supported eventType: " + eventType));
+          return;
+        }
+
+        if (!this._mediaEventCallbacks[handle][eventType]) {
+          this._mediaEventCallbacks[handle][eventType] = [];
+        }
+
+        var listeners = this._mediaEventCallbacks[handle][eventType];
+
+        if (listeners.indexOf(listener) === -1) {
+          listeners.push(listener);
+        }
+      }
+    }, {
+      key: "_removeMediaEventListener",
+      value: function _removeMediaEventListener(handle, eventType, listener) {
+        if (!this._mediaEventCallbacks[handle] || !this._mediaEventCallbacks[handle][eventType]) {
+          return;
+        }
+
+        var listeners = this._mediaEventCallbacks[handle][eventType];
+
+        if (listeners) {
+          var index = listeners.indexOf(listener);
+
+          if (index !== -1) {
+            listeners.splice(index, 1);
+          }
+        }
+      }
+    }, {
+      key: "setUrl",
+      value: function setUrl(handle, url) {
+        this._videoDefs[handle].src = url;
+      }
+    }, {
+      key: "setFormat",
+      value: function setFormat(handle, format) {
+        this._videoDefs[handle].format = format;
+      }
+    }, {
+      key: "setMetaData",
+      value: function setMetaData(handle, metaData) {
+        this._videoDefs[handle].metaData = metaData;
+      }
+    }, {
+      key: "getVideoTexture",
+      value: function getVideoTexture(handle) {
+        if (!handle) {
+          return null;
+        }
+
+        var player = this._players[handle];
+        return player.videoTextures[0];
+      }
+    }, {
+      key: "load",
+      value: function load(handle) {
+        this._players[handle].setVideo(this._videoDefs[handle]);
+
+        var monoTextureInfo = {
+          type: 'MonoTextureInfo',
+          texture: this._players[handle].videoTextures[0]
+        };
+
+        this._rnctx.RCTResourceManager.addResource('MonoTexture', handle, monoTextureInfo);
+      }
+    }, {
+      key: "play",
+      value: function play(handle) {
+        this._players[handle].videoPlayer.play();
+      }
+    }, {
+      key: "pause",
+      value: function pause(handle) {
+        this._players[handle].videoPlayer.pause();
+      }
+    }, {
+      key: "seekTo",
+      value: function seekTo(handle, position) {
+        this._players[handle].videoPlayer.seekTo(position);
+      }
+    }, {
+      key: "setMuted",
+      value: function setMuted(handle, muted) {
+        this._players[handle].videoPlayer.setMuted(muted);
+      }
+    }, {
+      key: "setVolume",
+      value: function setVolume(handle, volume) {
+        this._players[handle].videoPlayer.setVolume(volume);
+      }
+    }, {
+      key: "unload",
+      value: function unload(handle) {
+        this._rnctx.RCTResourceManager.removeResource('MonoTexture', handle);
+
+        this._players[handle].dispose();
+
+        delete this._players[handle];
+        delete this._videoDefs[handle];
+        delete this._mediaEventCallbacks[handle];
+      }
+    }, {
+      key: "frame",
+      value: function frame() {
+        for (var key in this._players) {
+          this._players[key].frame();
+        }
+      }
+    }]);
+
+    return RCTVideoModule;
+  }(_Module3.default);
+
+  exports.default = RCTVideoModule;
+});

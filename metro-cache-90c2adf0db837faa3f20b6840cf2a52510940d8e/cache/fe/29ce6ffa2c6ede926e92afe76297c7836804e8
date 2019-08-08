@@ -1,0 +1,330 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _three = _require(_dependencyMap[0], "three");
+
+  var THREE = _interopRequireWildcard(_three);
+
+  _require(_dependencyMap[1], "../Controls/Types");
+
+  var _createRemoteImageManager = _require(_dependencyMap[2], "../Utils/createRemoteImageManager");
+
+  var _createRemoteImageManager2 = _interopRequireDefault(_createRemoteImageManager);
+
+  var _Cursor = _require(_dependencyMap[3], "./Cursor");
+
+  var _Cursor2 = _interopRequireDefault(_Cursor);
+
+  var _Environment = _require(_dependencyMap[4], "./Environment/Environment");
+
+  var _Environment2 = _interopRequireDefault(_Environment);
+
+  var _Surface = _require(_dependencyMap[5], "./Surface");
+
+  var _Surface2 = _interopRequireDefault(_Surface);
+
+  var _SurfaceManager = _require(_dependencyMap[6], "./SurfaceManager");
+
+  var _SurfaceManager2 = _interopRequireDefault(_SurfaceManager);
+
+  var _VideoPlayer = _require(_dependencyMap[7], "./Video/VideoPlayer");
+
+  var _VideoPlayer2 = _interopRequireDefault(_VideoPlayer);
+
+  var _BrowserVideoPlayer = _require(_dependencyMap[8], "./Video/BrowserVideoPlayer");
+
+  var _BrowserVideoPlayer2 = _interopRequireDefault(_BrowserVideoPlayer);
+
+  var _VideoPlayerManager = _require(_dependencyMap[9], "./Video/VideoPlayerManager");
+
+  var _VideoPlayerManager2 = _interopRequireDefault(_VideoPlayerManager);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var LEFT = 'left';
+  var RIGHT = 'right';
+  var leftCamera = new THREE.PerspectiveCamera();
+  leftCamera.matrixAutoUpdate = false;
+  var rightCamera = new THREE.PerspectiveCamera();
+  rightCamera.matrixAutoUpdate = false;
+
+  var Compositor = function () {
+    function Compositor(frame, scene, customVideoPlayers) {
+      _classCallCheck(this, Compositor);
+
+      this._frame = frame;
+      this._cursorVisibility = 'auto';
+      this._isMouseCursorActive = false;
+      this._resourceManager = (0, _createRemoteImageManager2.default)();
+      this._videoPlayers = new _VideoPlayerManager2.default();
+
+      if (customVideoPlayers) {
+        for (var _iterator = customVideoPlayers, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[typeof Symbol === "function" ? Symbol.iterator : "@@iterator"]();;) {
+          var _ref;
+
+          if (_isArray) {
+            if (_i >= _iterator.length) break;
+            _ref = _iterator[_i++];
+          } else {
+            _i = _iterator.next();
+            if (_i.done) break;
+            _ref = _i.value;
+          }
+
+          var player = _ref;
+
+          this._videoPlayers.registerPlayerImplementation(player);
+        }
+      }
+
+      this._videoPlayers.registerPlayerImplementation(_BrowserVideoPlayer2.default);
+
+      this._camera = new THREE.PerspectiveCamera(60, frame.clientWidth / frame.clientHeight, 0.1, 2000);
+      this._renderer = new THREE.WebGLRenderer({
+        antialias: true
+      });
+      this._canvas = this._renderer.domElement;
+
+      this._renderer.setPixelRatio(window.devicePixelRatio);
+
+      this._renderer.setSize(frame.clientWidth, frame.clientHeight);
+
+      frame.appendChild(this._renderer.domElement);
+      this._scene = scene;
+      this._surfaceManager = new _SurfaceManager2.default(scene);
+      this._environment = new _Environment2.default(this._resourceManager, this._videoPlayers, this._surfaceManager);
+      scene.add(this._environment.getPanoNode());
+      this._cursor = new _Cursor2.default();
+      scene.add(this._cursor.getMesh());
+    }
+
+    _createClass(Compositor, [{
+      key: "setCursorVisibility",
+      value: function setCursorVisibility(vis) {
+        this._cursorVisibility = vis;
+      }
+    }, {
+      key: "setBackground",
+      value: function setBackground(src) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        return this._environment.setSource(src, options);
+      }
+    }, {
+      key: "setBackgroundVideo",
+      value: function setBackgroundVideo(handle) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        return this._environment.setVideoSource(handle, options);
+      }
+    }, {
+      key: "createVideoPlayer",
+      value: function createVideoPlayer(handle) {
+        return this._videoPlayers.createPlayer(handle);
+      }
+    }, {
+      key: "getVideoPlayerManager",
+      value: function getVideoPlayerManager() {
+        return this._videoPlayers;
+      }
+    }, {
+      key: "getEnvironment",
+      value: function getEnvironment() {
+        return this._environment;
+      }
+    }, {
+      key: "getCursorVisibility",
+      value: function getCursorVisibility() {
+        return this._cursorVisibility;
+      }
+    }, {
+      key: "setMouseCursorActive",
+      value: function setMouseCursorActive(active) {
+        if (this._isMouseCursorActive !== active) {
+          this._isMouseCursorActive = active;
+          this._frame.style.cursor = active ? 'pointer' : 'inherit';
+        }
+      }
+    }, {
+      key: "registerSurface",
+      value: function registerSurface(name, surface) {
+        this._surfaceManager.registerSurface(name, surface);
+      }
+    }, {
+      key: "unregisterSurface",
+      value: function unregisterSurface(name) {
+        this._surfaceManager.unregisterSurface(name);
+      }
+    }, {
+      key: "showSurface",
+      value: function showSurface(surface) {
+        this._surfaceManager.showSurface(surface);
+      }
+    }, {
+      key: "hideSurface",
+      value: function hideSurface(surface) {
+        this._surfaceManager.hideSurface(surface);
+      }
+    }, {
+      key: "getSurface",
+      value: function getSurface(name) {
+        return this._surfaceManager.getSurface(name);
+      }
+    }, {
+      key: "getDefaultSurface",
+      value: function getDefaultSurface() {
+        return this._surfaceManager.getDefaultSurface();
+      }
+    }, {
+      key: "getCanvas",
+      value: function getCanvas() {
+        return this._canvas;
+      }
+    }, {
+      key: "getCamera",
+      value: function getCamera() {
+        return this._camera;
+      }
+    }, {
+      key: "getRenderer",
+      value: function getRenderer() {
+        return this._renderer;
+      }
+    }, {
+      key: "resize",
+      value: function resize(width, height) {
+        var pixelRatio = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+
+        this._renderer.setPixelRatio(pixelRatio);
+
+        this._renderer.setSize(width, height, false);
+      }
+    }, {
+      key: "resizeCanvas",
+      value: function resizeCanvas(width, height) {
+        this._camera.aspect = width / height;
+
+        this._camera.updateProjectionMatrix();
+
+        this._renderer.setSize(width, height, true);
+      }
+    }, {
+      key: "prepareForRender",
+      value: function prepareForRender(eye) {
+        this._environment.prepareForRender(eye);
+      }
+    }, {
+      key: "frame",
+      value: function frame(delta) {
+        this._environment.frame(delta);
+
+        this._videoPlayers.frame();
+      }
+    }, {
+      key: "updateCursor",
+      value: function updateCursor(rays, depth) {
+        if (!rays || rays.length < 1) {
+          this._cursor.hide();
+
+          return;
+        }
+
+        if (!rays[0].drawsCursor) {
+          this._cursor.hide();
+
+          return;
+        }
+
+        this._cursor.show();
+
+        var origin = rays[0].origin;
+        var direction = rays[0].direction;
+        var cameraToCursorX = origin[0] + direction[0] * depth;
+        var cameraToCursorY = origin[1] + direction[1] * depth;
+        var cameraToCursorZ = origin[2] + direction[2] * depth;
+
+        this._cursor.setPosition(cameraToCursorX, cameraToCursorY, cameraToCursorZ);
+      }
+    }, {
+      key: "render",
+      value: function render(position, quat) {
+        this.prepareForRender(null);
+
+        this._camera.position.set(position[0], position[1], position[2]);
+
+        this._camera.quaternion.set(quat[0], quat[1], quat[2], quat[3]);
+
+        this._renderer.render(this._scene, this._camera);
+      }
+    }, {
+      key: "renderSurface",
+      value: function renderSurface(surface) {
+        this._renderer.render(surface.getScene(), surface.getCamera());
+      }
+    }, {
+      key: "renderVR",
+      value: function renderVR(display, frameData) {
+        var preserveAutoUpdate = this._scene.autoUpdate;
+
+        if (preserveAutoUpdate) {
+          this._scene.updateMatrixWorld();
+
+          this._scene.autoUpdate = false;
+        }
+
+        var size = this._renderer.getSize();
+
+        this._renderer.setScissorTest(true);
+
+        this._camera.updateMatrixWorld();
+
+        leftCamera.matrixWorldInverse.fromArray(frameData.leftViewMatrix);
+        rightCamera.matrixWorldInverse.fromArray(frameData.rightViewMatrix);
+        leftCamera.matrixWorld.getInverse(leftCamera.matrixWorldInverse);
+        rightCamera.matrixWorld.getInverse(rightCamera.matrixWorldInverse);
+        leftCamera.projectionMatrix.fromArray(frameData.leftProjectionMatrix);
+        rightCamera.projectionMatrix.fromArray(frameData.rightProjectionMatrix);
+        var x = 0;
+        var y = 0;
+        var w = 0.5 * size.width;
+        var h = size.height;
+        this.prepareForRender(LEFT);
+
+        this._renderer.setViewport(x, y, w, h);
+
+        this._renderer.setScissor(x, y, w, h);
+
+        this._renderer.render(this._scene, leftCamera);
+
+        x = w;
+        this.prepareForRender(RIGHT);
+
+        this._renderer.setViewport(x, y, w, h);
+
+        this._renderer.setScissor(x, y, w, h);
+
+        this._renderer.render(this._scene, rightCamera);
+
+        this._renderer.setViewport(0, 0, size.width, size.height);
+
+        this._renderer.setScissorTest(false);
+
+        if (preserveAutoUpdate) {
+          this._scene.autoUpdate = true;
+        }
+
+        display.submitFrame();
+      }
+    }]);
+
+    return Compositor;
+  }();
+
+  exports.default = Compositor;
+});

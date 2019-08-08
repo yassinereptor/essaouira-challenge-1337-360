@@ -1,0 +1,75 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.RCTInputControls = undefined;
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _GuiSysEvent = _require(_dependencyMap[0], "../OVRUI/UIView/GuiSysEvent");
+
+  _require(_dependencyMap[1], "../ReactNativeContext");
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var RCTInputControls = exports.RCTInputControls = function () {
+    function RCTInputControls(rnctx, guiSys) {
+      _classCallCheck(this, RCTInputControls);
+
+      this._rnctx = rnctx;
+      this._guiSys = guiSys;
+      guiSys.eventDispatcher.addEventListener('GuiSysEvent', this._onInputEvent.bind(this));
+      guiSys.eventDispatcher.addEventListener('InputChannelEvent', this._onInputChannelEvent.bind(this));
+    }
+
+    _createClass(RCTInputControls, [{
+      key: "_onInputEvent",
+      value: function _onInputEvent(event) {
+        if (event.eventType !== _GuiSysEvent.GuiSysEventType.INPUT_EVENT) {
+          return;
+        }
+
+        var target = this._rnctx.lastHit ? this._rnctx.getHitTag(this._rnctx.lastHit) : null;
+
+        if (target) {
+          var source = this._rnctx.lastSource;
+
+          this._rnctx.callFunction('RCTEventEmitter', 'receiveEvent', [target, 'topInput', {
+            inputEvent: event.args.inputEvent,
+            target: target,
+            source: source
+          }]);
+
+          if (isConfirmEvent(event.args.inputEvent)) {
+            this._rnctx.callFunction('RCTEventEmitter', 'receiveEvent', [target, 'topChange', []]);
+          }
+        }
+
+        this._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', ['onReceivedInputEvent', event.args.inputEvent, target]);
+      }
+    }, {
+      key: "_onInputChannelEvent",
+      value: function _onInputChannelEvent(event) {
+        var target = this._rnctx.lastHit ? this._rnctx.getHitTag(this._rnctx.lastHit) : null;
+
+        if (target) {
+          var source = this._rnctx.lastSource;
+
+          this._rnctx.callFunction('RCTEventEmitter', 'receiveEvent', [target, 'topInput', {
+            inputEvent: event.args,
+            target: target,
+            source: source
+          }]);
+        }
+
+        this._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', ['onReceivedInputEvent', event.args, target]);
+      }
+    }]);
+
+    return RCTInputControls;
+  }();
+
+  function isConfirmEvent(event) {
+    return event.type === 'GamepadInputEvent' && event.button === 0 && event.eventType === 'keyup' || event.type === 'KeyboardInputEvent' && event.code === 'Space' && event.eventType === 'keyup';
+  }
+});

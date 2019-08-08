@@ -1,0 +1,200 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _Math = _require(_dependencyMap[0], "../../Utils/Math");
+
+  _require(_dependencyMap[1], "../Types");
+
+  _require(_dependencyMap[2], "./Types");
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var DEFAULT_FOV = Math.PI / 6;
+  var DEG_TO_RAD = Math.PI / 180;
+  var HALF_PI = Math.PI / 2;
+  var TWO_PI = Math.PI * 2;
+  var SCREEN_ROTATION = [-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)];
+
+  function getScreenOrientation() {
+    var orientation = screen.orientation || screen.mozOrientation || screen.msOrientation || {};
+    var angle = orientation.angle || window.orientation || 0;
+    return angle * DEG_TO_RAD;
+  }
+
+  function isSupported() {
+    return 'DeviceOrientationEvent' in window && /Mobi/i.test(navigator.userAgent) && !/OculusBrowser/i.test(navigator.userAgent);
+  }
+
+  var DeviceOrientationCameraController = function () {
+    function DeviceOrientationCameraController(frame) {
+      var fov = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : DEFAULT_FOV;
+
+      _classCallCheck(this, DeviceOrientationCameraController);
+
+      this._alpha = null;
+      this._beta = null;
+      this._dragging = false;
+      this._gamma = null;
+      this._enabled = isSupported();
+      this._frame = frame;
+      this._lastX = 0;
+      this._lastY = 0;
+      this._screenOrientation = [0, 0, 0, 1];
+
+      this._onOrientationChange();
+
+      this._verticalFov = fov;
+      this._offsetYaw = 0;
+      this._offsetPitch = 0;
+      this._offsetYawQuat = null;
+      this._offsetPitchQuat = [0, 0, 0, 1];
+      (0, _Math.setQuatFromXRotation)(this._offsetPitchQuat, 0);
+      this._onOrientationChange = this._onOrientationChange.bind(this);
+      this._onDeviceOrientation = this._onDeviceOrientation.bind(this);
+      this._onTouchStart = this._onTouchStart.bind(this);
+      this._onTouchMove = this._onTouchMove.bind(this);
+      this._onTouchEnd = this._onTouchEnd.bind(this);
+      window.addEventListener('orientationchange', this._onOrientationChange);
+      window.addEventListener('deviceorientation', this._onDeviceOrientation);
+
+      this._frame.addEventListener('touchstart', this._onTouchStart);
+
+      this._frame.addEventListener('touchmove', this._onTouchMove);
+
+      this._frame.addEventListener('touchcancel', this._onTouchEnd);
+
+      this._frame.addEventListener('touchend', this._onTouchEnd);
+    }
+
+    _createClass(DeviceOrientationCameraController, [{
+      key: "_onOrientationChange",
+      value: function _onOrientationChange() {
+        var angle = getScreenOrientation();
+        (0, _Math.setQuatFromZRotation)(this._screenOrientation, -angle);
+        (0, _Math.quaternionPremultiply)(this._screenOrientation, SCREEN_ROTATION);
+      }
+    }, {
+      key: "_onDeviceOrientation",
+      value: function _onDeviceOrientation(event) {
+        var alpha = event.alpha * DEG_TO_RAD;
+        var beta = event.beta * DEG_TO_RAD;
+        var gamma = event.gamma * DEG_TO_RAD;
+
+        if (this._offsetYawQuat == null) {
+          var alphaOffset = getScreenOrientation() - alpha;
+          this._offsetYawQuat = [0, 0, 0, 1];
+          this._offsetYaw = alphaOffset;
+        }
+
+        this._alpha = alpha;
+        this._beta = beta;
+        this._gamma = gamma;
+      }
+    }, {
+      key: "_onTouchStart",
+      value: function _onTouchStart(e) {
+        if (!this._enabled) {
+          return;
+        }
+
+        this._dragging = true;
+        this._lastX = e.changedTouches[0].clientX;
+        this._lastY = e.changedTouches[0].clientY;
+        e.preventDefault();
+      }
+    }, {
+      key: "_onTouchMove",
+      value: function _onTouchMove(e) {
+        if (!this._enabled || !this._dragging) {
+          return;
+        }
+
+        var x = e.changedTouches[0].clientX;
+        var y = e.changedTouches[0].clientY;
+        var dx = x - this._lastX;
+        var dy = y - this._lastY;
+        this._lastX = x;
+        this._lastY = y;
+        var width = this._frame.clientWidth;
+        var height = this._frame.clientHeight;
+        var aspect = width / height;
+
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          this._offsetYaw += dx / width * this._verticalFov * aspect;
+
+          if (this._offsetYaw > TWO_PI) {
+            this._offsetYaw -= TWO_PI;
+          } else if (this._offsetYaw < 0) {
+            this._offsetYaw += TWO_PI;
+          }
+        } else {
+          this._offsetPitch += dy / height * this._verticalFov;
+
+          if (this._offsetPitch > HALF_PI) {
+            this._offsetPitch = HALF_PI;
+          } else if (this._offsetPitch < -HALF_PI) {
+            this._offsetPitch = -HALF_PI;
+          }
+        }
+
+        e.preventDefault();
+      }
+    }, {
+      key: "_onTouchEnd",
+      value: function _onTouchEnd(e) {
+        if (!this._enabled) {
+          return;
+        }
+
+        this._dragging = false;
+        e.preventDefault();
+      }
+    }, {
+      key: "enable",
+      value: function enable() {
+        this._enabled = true;
+      }
+    }, {
+      key: "disable",
+      value: function disable() {
+        this._enabled = false;
+      }
+    }, {
+      key: "fillCameraProperties",
+      value: function fillCameraProperties(position, rotation) {
+        if (!this._enabled) {
+          return false;
+        }
+
+        var alpha = this._alpha;
+        var beta = this._beta;
+        var gamma = this._gamma;
+
+        if (alpha == null || beta == null || gamma == null) {
+          return false;
+        }
+
+        (0, _Math.setQuatFromEuler)(rotation, beta || 0, alpha || 0, -(gamma || 0));
+        (0, _Math.setQuatFromXRotation)(this._offsetPitchQuat, this._offsetPitch);
+        (0, _Math.quaternionMultiply)(rotation, this._offsetPitchQuat);
+        var yawQuat = this._offsetYawQuat;
+
+        if (yawQuat) {
+          (0, _Math.setQuatFromYRotation)(yawQuat, this._offsetYaw);
+          (0, _Math.quaternionPremultiply)(rotation, yawQuat);
+        }
+
+        (0, _Math.quaternionMultiply)(rotation, this._screenOrientation);
+        return true;
+      }
+    }]);
+
+    return DeviceOrientationCameraController;
+  }();
+
+  exports.default = DeviceOrientationCameraController;
+});

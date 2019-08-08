@@ -1,0 +1,123 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  _require(_dependencyMap[0], "./Types");
+
+  _require(_dependencyMap[1], "./CameraControllers/Types");
+
+  _require(_dependencyMap[2], "./InputChannels/Types");
+
+  _require(_dependencyMap[3], "./Raycasters/Types");
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var Controls = function () {
+    function Controls() {
+      _classCallCheck(this, Controls);
+
+      this.cameraControllers = [];
+      this.eventChannels = [];
+      this.raycasters = [];
+      this._rayObjects = [];
+    }
+
+    _createClass(Controls, [{
+      key: "addCameraController",
+      value: function addCameraController(controller) {
+        this.cameraControllers.push(controller);
+      }
+    }, {
+      key: "addEventChannel",
+      value: function addEventChannel(channel) {
+        this.eventChannels.push(channel);
+      }
+    }, {
+      key: "addRaycaster",
+      value: function addRaycaster(caster) {
+        this.raycasters.push(caster);
+
+        this._rayObjects.push({
+          direction: [0, 0, 0],
+          drawsCursor: false,
+          hasAbsoluteCoordinates: false,
+          maxLength: Infinity,
+          origin: [0, 0, 0],
+          type: ''
+        });
+      }
+    }, {
+      key: "clearCameraControllers",
+      value: function clearCameraControllers() {
+        this.cameraControllers.length = 0;
+      }
+    }, {
+      key: "clearEventChannels",
+      value: function clearEventChannels() {
+        this.eventChannels.length = 0;
+      }
+    }, {
+      key: "clearRaycasters",
+      value: function clearRaycasters() {
+        this.raycasters.length = 0;
+      }
+    }, {
+      key: "getCameraControllers",
+      value: function getCameraControllers() {
+        return this.cameraControllers.slice();
+      }
+    }, {
+      key: "getEventChannels",
+      value: function getEventChannels() {
+        return this.eventChannels.slice();
+      }
+    }, {
+      key: "getRaycasters",
+      value: function getRaycasters() {
+        return this.raycasters.slice();
+      }
+    }, {
+      key: "fillEvents",
+      value: function fillEvents(queue) {
+        for (var i = 0; i < this.eventChannels.length; i++) {
+          var channel = this.eventChannels[i];
+          channel.getEvents(queue);
+        }
+      }
+    }, {
+      key: "fillRays",
+      value: function fillRays(queue) {
+        for (var i = 0; i < this.raycasters.length; i++) {
+          var caster = this.raycasters[i];
+          var rayObject = this._rayObjects[i];
+
+          if (caster.fillDirection(rayObject.direction) && caster.fillOrigin(rayObject.origin)) {
+            rayObject.type = caster.getType();
+            rayObject.maxLength = caster.getMaxLength();
+            rayObject.drawsCursor = caster.drawsCursor();
+            rayObject.hasAbsoluteCoordinates = caster.hasAbsoluteCoordinates();
+            queue.push(rayObject);
+          }
+        }
+      }
+    }, {
+      key: "fillCameraProperties",
+      value: function fillCameraProperties(position, rotation) {
+        for (var i = 0; i < this.cameraControllers.length; i++) {
+          var controller = this.cameraControllers[i];
+
+          if (controller.fillCameraProperties(position, rotation)) {
+            return;
+          }
+        }
+      }
+    }]);
+
+    return Controls;
+  }();
+
+  exports.default = Controls;
+});

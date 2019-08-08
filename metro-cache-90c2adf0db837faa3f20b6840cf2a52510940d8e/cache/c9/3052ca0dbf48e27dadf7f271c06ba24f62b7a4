@@ -1,0 +1,290 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.SurfaceShape = undefined;
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _three = _require(_dependencyMap[0], "three");
+
+  var THREE = _interopRequireWildcard(_three);
+
+  _require(_dependencyMap[1], "../Controls/Types");
+
+  function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var SurfaceShape = exports.SurfaceShape = {
+    Cylinder: 'Cylinder',
+    Flat: 'Flat'
+  };
+  var DEFAULT_DENSITY = 4680;
+  var DEFAULT_RADIUS = 4;
+
+  var Surface = function () {
+    function Surface(width, height) {
+      var shape = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : SurfaceShape.Cylinder;
+
+      _classCallCheck(this, Surface);
+
+      this._width = width;
+      this._height = height;
+      this._density = DEFAULT_DENSITY;
+      this._radius = DEFAULT_RADIUS;
+      this._shape = shape;
+      this._yaw = 0;
+      this._pitch = 0;
+      this._roll = 0;
+      this.rootTag = -1;
+      this._material = new THREE.MeshBasicMaterial({
+        wireframe: false,
+        transparent: true,
+        premultipliedAlpha: true,
+        color: 'white',
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.CustomBlending,
+        blendSrc: THREE.OneFactor,
+        blendDst: THREE.OneMinusSrcAlphaFactor,
+        blendEquation: THREE.AddEquation,
+        blendSrcAlpha: THREE.OneFactor,
+        blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
+        blendEquationAlpha: THREE.AddEquation
+      });
+      this._camera = new THREE.OrthographicCamera();
+      this._subScene = new THREE.Scene();
+      this._subScene.scale.y = -1;
+      this._renderTarget = new THREE.WebGLRenderTarget(width, height, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        format: THREE.RGBAFormat
+      });
+      this._material.map = this._renderTarget.texture;
+
+      this._regenerateGeometry();
+
+      this._mesh = new THREE.Mesh(this._geometry, this._material);
+      this._mesh.subScene = this._subScene;
+      this._mesh.subSceneCamera = this._camera;
+      this._mesh.owner = this;
+      this._mesh.scale.z = -1;
+      this.resize(width, height);
+    }
+
+    _createClass(Surface, [{
+      key: "setDensity",
+      value: function setDensity(density) {
+        if (density < 0) {
+          throw new Error('Surface density cannot be negative');
+        }
+
+        this._density = density;
+
+        this._regenerateGeometry();
+      }
+    }, {
+      key: "setRadius",
+      value: function setRadius(radius) {
+        if (radius < 0) {
+          throw new Error('Surface radius cannot be negative');
+        }
+
+        this._radius = radius;
+
+        if (this._shape === SurfaceShape.Cylinder) {
+          this._regenerateGeometry();
+        } else if (this._shape === SurfaceShape.Flat) {
+          this._recomputeOrientation();
+        }
+      }
+    }, {
+      key: "setShape",
+      value: function setShape(shape) {
+        if (this._shape === shape) {
+          return;
+        }
+
+        this._shape = shape;
+
+        this._regenerateGeometry();
+
+        this._recomputeOrientation();
+      }
+    }, {
+      key: "setAngle",
+      value: function setAngle(yaw, pitch) {
+        var roll = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+        this._yaw = yaw;
+        this._pitch = pitch;
+        this._roll = roll;
+
+        this._recomputeOrientation();
+      }
+    }, {
+      key: "recenter",
+      value: function recenter(cameraQuat, centerControl) {
+        var euler = new THREE.Euler(0, 0, 0).setFromQuaternion(new THREE.Quaternion(cameraQuat[0], cameraQuat[1], cameraQuat[2], cameraQuat[3]), 'YXZ');
+
+        if (centerControl === 'yaw') {
+          this._yaw = -euler.y;
+        } else if (centerControl === 'yaw-pitch') {
+          this._yaw = -euler.y;
+          this._pitch = euler.x;
+        } else {
+          this._yaw = -euler.y;
+          this._pitch = euler.x;
+          this._roll = euler.z;
+        }
+
+        this._recomputeOrientation();
+      }
+    }, {
+      key: "setOpacity",
+      value: function setOpacity(opacity) {
+        if (opacity < 0 || opacity > 1) {
+          throw new Error('Surface opacity must be between 0.0 and 1.0');
+        }
+
+        this._material.opacity = opacity;
+      }
+    }, {
+      key: "setVisibility",
+      value: function setVisibility(visible) {
+        this._mesh.visible = visible;
+      }
+    }, {
+      key: "attachSubNode",
+      value: function attachSubNode(subNode) {
+        this._subScene.add(subNode);
+      }
+    }, {
+      key: "removeSubNode",
+      value: function removeSubNode(subNode) {
+        this._subScene.remove(subNode);
+      }
+    }, {
+      key: "getWidth",
+      value: function getWidth() {
+        return this._width;
+      }
+    }, {
+      key: "getHeight",
+      value: function getHeight() {
+        return this._height;
+      }
+    }, {
+      key: "getScene",
+      value: function getScene() {
+        return this._subScene;
+      }
+    }, {
+      key: "getCamera",
+      value: function getCamera() {
+        return this._camera;
+      }
+    }, {
+      key: "getRenderTarget",
+      value: function getRenderTarget() {
+        return this._renderTarget;
+      }
+    }, {
+      key: "getNode",
+      value: function getNode() {
+        return this._mesh;
+      }
+    }, {
+      key: "resize",
+      value: function resize(width, height) {
+        this._width = width;
+        this._height = height;
+
+        this._renderTarget.setSize(width, height);
+
+        this._material.needsUpdate = true;
+        this._camera.left = 0;
+        this._camera.right = width;
+        this._camera.top = 0;
+        this._camera.bottom = height;
+        this._camera.near = -1000;
+        this._camera.far = 1000;
+
+        this._camera.setViewOffset(width, height, 0, 0, width, height);
+
+        this._camera.updateProjectionMatrix();
+
+        this._subScene._rttWidth = width;
+        this._subScene._rttHeight = height;
+
+        this._regenerateGeometry();
+      }
+    }, {
+      key: "_regenerateGeometry",
+      value: function _regenerateGeometry() {
+        if (this._geometry) {
+          this._geometry.dispose();
+        }
+
+        if (this._shape === SurfaceShape.Cylinder) {
+          this._geometry = Surface.createCylinderGeometry(this._width, this._height, this._density, this._radius);
+        } else if (this._shape === SurfaceShape.Flat) {
+          this._geometry = Surface.createFlatGeometry(this._width, this._height, this._density, this._radius);
+        }
+
+        if (this._mesh) {
+          this._mesh.geometry = this._geometry;
+          this._mesh.needsUpdate = true;
+        }
+      }
+    }, {
+      key: "_recomputeOrientation",
+      value: function _recomputeOrientation() {
+        if (this._shape === SurfaceShape.Cylinder) {
+          if (this._mesh) {
+            this._mesh.quaternion.set(0, 0, 0, 1);
+
+            this._mesh.position.set(0, 0, 0);
+          }
+        } else if (this._shape === SurfaceShape.Flat) {
+          var z = Math.cos(this._pitch) * this._radius;
+
+          var y = Math.sin(this._pitch) * this._radius;
+
+          var x = Math.sin(this._yaw) * z;
+          z *= Math.cos(this._yaw);
+
+          this._mesh.position.set(x, y, -z);
+
+          var sp = Math.sin(this._pitch / 2);
+          var cp = Math.cos(this._pitch / 2);
+          var sy = Math.sin(-this._yaw / 2);
+          var cy = Math.cos(-this._yaw / 2);
+          var sr = Math.sin(this._roll / 2);
+          var cr = Math.cos(this._roll / 2);
+
+          this._mesh.quaternion.set(sp * cy * cr + cp * sy * sr, cp * sy * cr - sp * cy * sr, cp * cy * sr - sp * sy * cr, cp * cy * cr + sp * sy * sr);
+        }
+      }
+    }], [{
+      key: "createCylinderGeometry",
+      value: function createCylinderGeometry(width, height, density, radius) {
+        var delta = 2 * Math.PI * width / density;
+        var halfHeight = radius * Math.PI * height / density;
+        return new THREE.CylinderGeometry(radius, radius, halfHeight * 2, 60, 6, true, -delta * 0.5, delta);
+      }
+    }, {
+      key: "createFlatGeometry",
+      value: function createFlatGeometry(width, height, density, radius) {
+        var halfWidth = radius * Math.PI * width / density;
+        var halfHeight = radius * Math.PI * height / density;
+        return new THREE.PlaneGeometry(halfWidth * 2, halfHeight * 2, 1, 1);
+      }
+    }]);
+
+    return Surface;
+  }();
+
+  Surface.SurfaceShape = SurfaceShape;
+  exports.default = Surface;
+});

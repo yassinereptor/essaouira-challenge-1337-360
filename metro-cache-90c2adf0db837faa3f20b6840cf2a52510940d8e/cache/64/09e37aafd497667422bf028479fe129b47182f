@@ -1,0 +1,65 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var TouchInputChannel = function () {
+    function TouchInputChannel(target) {
+      _classCallCheck(this, TouchInputChannel);
+
+      this._batchedEvents = [];
+      this._onTouchStart = this._onTouchStart.bind(this);
+      this._onTouchEnd = this._onTouchEnd.bind(this);
+      target.addEventListener('touchstart', this._onTouchStart, true);
+      target.addEventListener('touchend', this._onTouchEnd, true);
+      target.addEventListener('touchcancel', this._onTouchEnd, true);
+    }
+
+    _createClass(TouchInputChannel, [{
+      key: "_onTouchStart",
+      value: function _onTouchStart(e) {
+        var event = {
+          type: 'button',
+          button: 0,
+          action: 'down',
+          source: 'touch',
+          buttonClass: 'confirm'
+        };
+
+        this._batchedEvents.push(event);
+      }
+    }, {
+      key: "_onTouchEnd",
+      value: function _onTouchEnd(e) {
+        var event = {
+          type: 'button',
+          button: 0,
+          action: 'up',
+          source: 'mouse',
+          buttonClass: 'confirm'
+        };
+
+        this._batchedEvents.push(event);
+      }
+    }, {
+      key: "getEvents",
+      value: function getEvents(acc) {
+        var events = this._batchedEvents;
+
+        for (var i = 0, len = events.length; i < len; i++) {
+          acc.push(events[i]);
+        }
+
+        events.length = 0;
+      }
+    }]);
+
+    return TouchInputChannel;
+  }();
+
+  exports.default = TouchInputChannel;
+});

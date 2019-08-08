@@ -1,0 +1,103 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  _require(_dependencyMap[0], "../Types");
+
+  _require(_dependencyMap[1], "./Types");
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var DEFAULT_FOV = Math.PI / 6;
+  var HALF_PI = Math.PI / 2;
+
+  var ScrollPanCameraController = function () {
+    function ScrollPanCameraController(frame) {
+      var fov = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : DEFAULT_FOV;
+
+      _classCallCheck(this, ScrollPanCameraController);
+
+      this._deltaYaw = 0;
+      this._deltaPitch = 0;
+      this._enabled = true;
+      this._frame = frame;
+      this._lastX = 0;
+      this._lastY = 0;
+      this._verticalFov = fov;
+      this._onWheel = this._onWheel.bind(this);
+
+      this._frame.addEventListener('wheel', this._onWheel);
+    }
+
+    _createClass(ScrollPanCameraController, [{
+      key: "_onWheel",
+      value: function _onWheel(e) {
+        if (!this._enabled) {
+          return;
+        }
+
+        var width = this._frame.clientWidth;
+        var height = this._frame.clientHeight;
+        var aspect = width / height;
+        var deltaX = e.deltaX;
+        var deltaY = e.deltaY;
+        this._deltaPitch += deltaX / width * this._verticalFov * aspect;
+        this._deltaYaw += deltaY / height * this._verticalFov;
+        this._deltaYaw = Math.max(-HALF_PI, Math.min(HALF_PI, this._deltaYaw));
+        e.preventDefault();
+      }
+    }, {
+      key: "enable",
+      value: function enable() {
+        this._enabled = true;
+      }
+    }, {
+      key: "disable",
+      value: function disable() {
+        this._enabled = false;
+      }
+    }, {
+      key: "fillCameraProperties",
+      value: function fillCameraProperties(position, rotation) {
+        if (!this._enabled) {
+          return false;
+        }
+
+        if (this._deltaPitch === 0 && this._deltaYaw === 0) {
+          return false;
+        }
+
+        var cp = Math.cos(this._deltaPitch / 2);
+        var sp = Math.sin(this._deltaPitch / 2);
+        var cy = Math.cos(this._deltaYaw / 2);
+        var sy = Math.sin(this._deltaYaw / 2);
+        var x1 = rotation[0];
+        var y1 = rotation[1];
+        var z1 = rotation[2];
+        var w1 = rotation[3];
+        var x2 = cp * x1 + sp * z1;
+        var y2 = cp * y1 + sp * w1;
+        var z2 = cp * z1 - sp * x1;
+        var w2 = cp * w1 - sp * y1;
+        var x3 = w2 * sy + x2 * cy;
+        var y3 = y2 * cy + z2 * sy;
+        var z3 = -y2 * sy + z2 * cy;
+        var w3 = w2 * cy - x2 * sy;
+        rotation[0] = x3;
+        rotation[1] = y3;
+        rotation[2] = z3;
+        rotation[3] = w3;
+        this._deltaPitch = 0;
+        this._deltaYaw = 0;
+        return true;
+      }
+    }]);
+
+    return ScrollPanCameraController;
+  }();
+
+  exports.default = ScrollPanCameraController;
+});

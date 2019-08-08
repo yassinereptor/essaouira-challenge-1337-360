@@ -1,0 +1,91 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var Module = function () {
+    function Module(name) {
+      _classCallCheck(this, Module);
+
+      if (name.startsWith('RCT')) {
+        name = name.substr(3);
+      }
+
+      this.name = name;
+      this.__functionMap = [];
+    }
+
+    _createClass(Module, [{
+      key: "getName",
+      value: function getName() {
+        return this.name;
+      }
+    }, {
+      key: "__describe",
+      value: function __describe() {
+        var constants = {};
+        var functions = [];
+        var promiseFunctions = [];
+        var syncFunctions = [];
+        var methodID = 0;
+        var proto = Object.getPrototypeOf(this);
+        var protoMembers = Object.getOwnPropertyNames(proto);
+
+        for (var _iterator = protoMembers, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[typeof Symbol === "function" ? Symbol.iterator : "@@iterator"]();;) {
+          var _ref;
+
+          if (_isArray) {
+            if (_i >= _iterator.length) break;
+            _ref = _iterator[_i++];
+          } else {
+            _i = _iterator.next();
+            if (_i.done) break;
+            _ref = _i.value;
+          }
+
+          var attr = _ref;
+          var member = proto[attr];
+
+          if (attr[0] === '_' || attr === 'constructor' || typeof member !== 'function') {
+            continue;
+          }
+
+          var name = attr;
+
+          if (name[0] === '$') {
+            name = name.substring(1);
+            promiseFunctions.push(methodID);
+          }
+
+          this.__functionMap[methodID] = member;
+          functions.push(name);
+          methodID++;
+        }
+
+        for (var _attr in this) {
+          var member = this[_attr];
+
+          if (_attr[0] === '_' || typeof member === 'function') {
+            continue;
+          }
+
+          if (_attr[0] === '$' && _attr.indexOf('_') > -1) {
+            continue;
+          }
+
+          constants[_attr] = member;
+        }
+
+        return [this.name, constants, functions, promiseFunctions, syncFunctions];
+      }
+    }]);
+
+    return Module;
+  }();
+
+  exports.default = Module;
+});

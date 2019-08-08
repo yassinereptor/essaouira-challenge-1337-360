@@ -1,0 +1,158 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _Module2 = _require(_dependencyMap[0], "./Module");
+
+  var _Module3 = _interopRequireDefault(_Module2);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+  function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+  var WebSocketModule = function (_Module) {
+    _inherits(WebSocketModule, _Module);
+
+    function WebSocketModule(rnctx) {
+      _classCallCheck(this, WebSocketModule);
+
+      var _this = _possibleConstructorReturn(this, (WebSocketModule.__proto__ || Object.getPrototypeOf(WebSocketModule)).call(this, 'WebSocketModule'));
+
+      _this._sockets = {};
+      _this._rnctx = rnctx;
+      return _this;
+    }
+
+    _createClass(WebSocketModule, [{
+      key: "connect",
+      value: function connect(url, protocols, options, socketId) {
+        var _this2 = this;
+
+        var socket = protocols ? new WebSocket(url, protocols) : new WebSocket(url);
+        socket.binaryType = 'arraybuffer';
+        this._sockets[String(socketId)] = socket;
+
+        socket.onclose = function (event) {
+          var payload = {
+            id: socketId,
+            code: event.code,
+            reason: event.reason
+          };
+
+          _this2._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', ['websocketClosed', payload]);
+        };
+
+        socket.onerror = function (event) {
+          var payload = {
+            id: socketId,
+            message: 'Native WebSocket error'
+          };
+
+          _this2._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', ['websocketFailed', payload]);
+        };
+
+        socket.onmessage = function (event) {
+          var data = event.data;
+
+          if (data instanceof ArrayBuffer) {
+            var arr = new Uint8Array(data);
+            var str = new Array(arr.byteLength);
+
+            for (var i = 0; i < str.length; i++) {
+              str[i] = String.fromCharCode(arr[i]);
+            }
+
+            data = btoa(str.join(''));
+          }
+
+          var payload = {
+            id: socketId,
+            type: typeof event.data === 'string' ? 'string' : 'binary',
+            data: data
+          };
+
+          _this2._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', ['websocketMessage', payload]);
+        };
+
+        socket.onopen = function (event) {
+          var payload = {
+            id: socketId
+          };
+
+          _this2._rnctx.callFunction('RCTDeviceEventEmitter', 'emit', ['websocketOpen', payload]);
+        };
+      }
+    }, {
+      key: "_send",
+      value: function _send(data, socketId) {
+        var socket = this._sockets[String(socketId)];
+
+        if (!socket) {
+          throw new Error('Error while sending data to WebSocket: no such socket');
+        }
+
+        socket.send(data);
+      }
+    }, {
+      key: "send",
+      value: function send(data, socketId) {
+        this._send(data, socketId);
+      }
+    }, {
+      key: "sendBinary",
+      value: function sendBinary(data, socketId) {
+        var chars = atob(data);
+        var array = new Uint8Array(chars.length);
+
+        for (var i = 0; i < chars.length; i++) {
+          array[i] = chars.charCodeAt(i) & 255;
+        }
+
+        this._send(array.buffer, socketId);
+      }
+    }, {
+      key: "ping",
+      value: function ping(socketId) {
+        throw new Error('Cannot send a ping. Browser WebSocket APIs are not capable of sending specific opcodes');
+      }
+    }, {
+      key: "close",
+      value: function close(codeOrId, reason, socketId) {
+        var id = void 0;
+
+        if (typeof reason !== 'undefined' && typeof socketId !== 'undefined') {
+          id = String(socketId);
+          var socket = this._sockets[id];
+
+          if (!socket) {
+            return;
+          }
+
+          socket.close(codeOrId, reason);
+        } else {
+          id = String(codeOrId);
+          var _socket = this._sockets[id];
+
+          if (!_socket) {
+            return;
+          }
+
+          _socket.close();
+        }
+
+        delete this._sockets[id];
+      }
+    }]);
+
+    return WebSocketModule;
+  }(_Module3.default);
+
+  exports.default = WebSocketModule;
+});

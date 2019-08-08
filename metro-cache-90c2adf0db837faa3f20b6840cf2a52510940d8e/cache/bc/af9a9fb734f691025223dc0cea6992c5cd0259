@@ -1,0 +1,188 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _Math = _require(_dependencyMap[0], "../../Utils/Math");
+
+  _require(_dependencyMap[1], "../Types");
+
+  _require(_dependencyMap[2], "./Types");
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var TYPE = 'controller';
+  var getGamepads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads.bind(navigator) : function () {
+    return [];
+  };
+  var armModelVector = [0, 0, -1];
+
+  function basicArmModel(origin, orientation, hand) {
+    armModelVector[0] = 0;
+    armModelVector[1] = 0;
+    armModelVector[2] = -0.4;
+    (0, _Math.rotateByQuaternion)(armModelVector, orientation);
+    origin[0] = armModelVector[0] + (hand === 'left' ? -0.3 : 0.3);
+    origin[1] = armModelVector[1] - 0.3;
+    origin[2] = armModelVector[2];
+  }
+
+  var ControllerRaycaster = function () {
+    function ControllerRaycaster() {
+      var _this = this;
+
+      _classCallCheck(this, ControllerRaycaster);
+
+      this._enabled = true;
+      this._gamepadID = null;
+      this._gamepadIndex = -1;
+      var initialGamepads = getGamepads();
+
+      for (var i = initialGamepads.length; i--;) {
+        this._setGamepadIfValid(initialGamepads[i]);
+      }
+
+      window.addEventListener('gamepadconnected', function (e) {
+        _this._setGamepadIfValid(e.gamepad);
+      });
+      window.addEventListener('gamepaddisconnected', function (e) {
+        if (_this._gamepadID && e.gamepad.id === _this._gamepadID) {
+          _this._setGamepad(null);
+        }
+      });
+    }
+
+    _createClass(ControllerRaycaster, [{
+      key: "_setGamepadIfValid",
+      value: function _setGamepadIfValid(gamepad) {
+        if (!gamepad || this._gamepadID != null) {
+          return;
+        }
+
+        if (gamepad.pose) {
+          this._setGamepad(gamepad);
+        }
+      }
+    }, {
+      key: "_setGamepad",
+      value: function _setGamepad(gamepad) {
+        if (!gamepad) {
+          this._gamepadID = null;
+          this._gamepadIndex = -1;
+          return;
+        }
+
+        this._gamepadID = gamepad.id;
+        this._gamepadIndex = gamepad.index;
+      }
+    }, {
+      key: "_getGamepad",
+      value: function _getGamepad() {
+        var gamepads = getGamepads();
+        return gamepads[this._gamepadIndex];
+      }
+    }, {
+      key: "enable",
+      value: function enable() {
+        this._enabled = true;
+      }
+    }, {
+      key: "disable",
+      value: function disable() {
+        this._enabled = false;
+      }
+    }, {
+      key: "getType",
+      value: function getType() {
+        return TYPE;
+      }
+    }, {
+      key: "getMaxLength",
+      value: function getMaxLength() {
+        return Infinity;
+      }
+    }, {
+      key: "fillDirection",
+      value: function fillDirection(direction) {
+        if (!this._enabled) {
+          return false;
+        }
+
+        if (!this._gamepadID) {
+          return false;
+        }
+
+        var gamepad = this._getGamepad();
+
+        if (!gamepad) {
+          return false;
+        }
+
+        if (!gamepad.pose || !gamepad.pose.orientation) {
+          return false;
+        }
+
+        var orientation = gamepad.pose.orientation;
+        direction[0] = 0;
+        direction[1] = 0;
+        direction[2] = -1;
+        (0, _Math.rotateByQuaternion)(direction, orientation);
+        return true;
+      }
+    }, {
+      key: "fillOrigin",
+      value: function fillOrigin(origin) {
+        if (!this._enabled) {
+          return false;
+        }
+
+        if (!this._gamepadID) {
+          return false;
+        }
+
+        var gamepad = this._getGamepad();
+
+        if (!gamepad) {
+          return false;
+        }
+
+        if (!gamepad.pose) {
+          return false;
+        }
+
+        var pose = gamepad.pose;
+
+        if (!pose.position) {
+          if (pose.orientation) {
+            basicArmModel(origin, pose.orientation, gamepad.hand);
+            return true;
+          }
+
+          return false;
+        }
+
+        var position = pose.position;
+        origin[0] = position[0];
+        origin[1] = position[1];
+        origin[2] = position[2];
+        return true;
+      }
+    }, {
+      key: "drawsCursor",
+      value: function drawsCursor() {
+        return true;
+      }
+    }, {
+      key: "hasAbsoluteCoordinates",
+      value: function hasAbsoluteCoordinates() {
+        return true;
+      }
+    }]);
+
+    return ControllerRaycaster;
+  }();
+
+  exports.default = ControllerRaycaster;
+});

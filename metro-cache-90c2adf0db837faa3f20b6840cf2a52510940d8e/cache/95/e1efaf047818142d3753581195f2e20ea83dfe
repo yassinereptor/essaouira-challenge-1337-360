@@ -1,0 +1,312 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _three = _require(_dependencyMap[0], "three");
+
+  var THREE = _interopRequireWildcard(_three);
+
+  function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var FORMATS = {
+    ogg: 'video/ogg; codecs="theora, vorbis"',
+    mp4: 'video/mp4; codecs="avc1.4D401E, mp4a.40.2"',
+    mkv: 'video/x-matroska; codecs="theora, vorbis"',
+    webm: 'video/webm; codecs="vp8, vorbis"'
+  };
+  var supportCache = null;
+
+  function fillSupportCache() {
+    var video = document.createElement('video');
+    supportCache = [];
+
+    for (var type in FORMATS) {
+      var canPlay = video.canPlayType(FORMATS[type]);
+
+      if (canPlay.length && canPlay !== 'no') {
+        supportCache.push(type);
+      }
+    }
+  }
+
+  var BrowserVideoPlayer = function () {
+    function BrowserVideoPlayer() {
+      var _this = this;
+
+      _classCallCheck(this, BrowserVideoPlayer);
+
+      this._onEnded = function () {
+        _this._playing = false;
+
+        _this._updateStatus('finished');
+      };
+
+      this._onSeeked = function () {
+        _this._isBuffering = false;
+
+        if (_this._status === 'seeking') {
+          if (_this._playing) {
+            _this._updateStatus('playing');
+          } else {
+            _this._updateStatus('ready');
+          }
+        }
+      };
+
+      this._onWaiting = function () {
+        if (!_this._isBuffering) {
+          _this._isBuffering = true;
+
+          _this._updateStatus(_this._status, undefined, true);
+        }
+      };
+
+      this._onPlaying = function () {
+        if (_this._isBuffering) {
+          _this._isBuffering = false;
+
+          _this._updateStatus(_this._status, undefined, true);
+        }
+      };
+
+      this._onTimeupdate = function () {
+        if (_this._playing) {
+          _this._updateStatus(_this._status, undefined, true);
+        }
+      };
+
+      this._onPause = function () {
+        if (_this._playing) {
+          _this._playing = false;
+
+          _this._updateStatus('paused');
+        }
+      };
+
+      this._status = 'closed';
+      this._isBuffering = false;
+      this._playing = false;
+      this._primed = false;
+      this._element = document.createElement('video');
+      this._element.muted = true;
+      this._element.style.display = 'none';
+
+      this._element.setAttribute('playsinline', 'playsinline');
+
+      this._element.setAttribute('webkit-playsinline', 'webkit-playsinline');
+
+      this._element.setAttribute('poster', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+
+      this._element.crossOrigin = 'anonymous';
+      this._texture = null;
+
+      if (document.body) {
+        document.body.appendChild(this._element);
+      }
+
+      this._load = null;
+      this._eventDispatcher = new THREE.EventDispatcher();
+
+      this._element.addEventListener('seeked', this._onSeeked);
+
+      this._element.addEventListener('ended', this._onEnded);
+
+      this._element.addEventListener('waiting', this._onWaiting);
+
+      this._element.addEventListener('playing', this._onPlaying);
+
+      this._element.addEventListener('timeupdate', this._onTimeupdate);
+
+      this._element.addEventListener('pause', this._onPause);
+    }
+
+    _createClass(BrowserVideoPlayer, [{
+      key: "_updateStatus",
+      value: function _updateStatus(newStatus, error) {
+        var forceReport = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forceReport || newStatus !== this._status) {
+          this._status = newStatus;
+
+          this._eventDispatcher.dispatchEvent({
+            type: 'status',
+            duration: this._element.duration,
+            isBuffering: this._isBuffering,
+            error: error,
+            isMuted: this._element.muted,
+            position: this._element.currentTime,
+            status: this._status,
+            volume: this._element.volume
+          });
+        }
+      }
+    }, {
+      key: "setSource",
+      value: function setSource(src, stereoFormat, fileFormat, layout) {
+        var _this2 = this;
+
+        if (this._texture) {
+          this._texture.dispose();
+        }
+
+        this._element.src = src;
+
+        this._element.load();
+
+        this._isBuffering = true;
+
+        this._updateStatus('closed', undefined, true);
+
+        this._load = new Promise(function (resolve, reject) {
+          var closed = false;
+
+          _this2._element.addEventListener('canplay', function () {
+            if (closed) {
+              return;
+            }
+
+            _this2._isBuffering = false;
+            closed = true;
+            var width = _this2._element.videoWidth;
+            var height = _this2._element.videoHeight;
+            var tex = new THREE.Texture(_this2._element);
+            tex.generateMipmaps = false;
+            tex.wrapS = THREE.ClampToEdgeWrapping;
+            tex.wrapT = THREE.ClampToEdgeWrapping;
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            _this2._texture = tex;
+
+            _this2._updateStatus('ready');
+
+            resolve({
+              format: stereoFormat || '2D',
+              layout: layout || 'RECT',
+              height: height,
+              src: src,
+              tex: tex,
+              width: width
+            });
+          });
+
+          _this2._element.addEventListener('error', function () {
+            if (closed) {
+              return;
+            }
+
+            _this2._isBuffering = false;
+            closed = true;
+            var error = _this2._element.error;
+            var errorStr = error ? error.message : 'Unknown media error';
+
+            _this2._updateStatus('failed', errorStr);
+
+            reject(new Error(errorStr));
+          });
+        });
+      }
+    }, {
+      key: "load",
+      value: function load() {
+        return this._load || Promise.reject(new Error('No source set'));
+      }
+    }, {
+      key: "update",
+      value: function update() {
+        if (this._texture && this._playing) {
+          this._texture.needsUpdate = true;
+        }
+      }
+    }, {
+      key: "setVolume",
+      value: function setVolume(vol) {
+        this._element.volume = Math.max(0, Math.min(vol, 1));
+      }
+    }, {
+      key: "setMuted",
+      value: function setMuted(muted) {
+        this._element.muted = muted;
+      }
+    }, {
+      key: "setLoop",
+      value: function setLoop(loop) {
+        this._element.loop = true;
+      }
+    }, {
+      key: "play",
+      value: function play() {
+        var _this3 = this;
+
+        this._element.play().then(function () {
+          _this3._playing = true;
+
+          _this3._updateStatus('playing');
+        }).catch(function (e) {
+          console.error("BrowserVideoPlayer: get error \"" + e.toString() + "\" when calling play().");
+
+          _this3._updateStatus(_this3._status, e.toString(), true);
+        });
+      }
+    }, {
+      key: "pause",
+      value: function pause() {
+        this._element.pause();
+
+        this._playing = false;
+
+        this._updateStatus('paused');
+      }
+    }, {
+      key: "seekTo",
+      value: function seekTo(position) {
+        this._element.currentTime = position;
+        this._isBuffering = true;
+
+        this._updateStatus('seeking');
+      }
+    }, {
+      key: "addEventListener",
+      value: function addEventListener(event, listener) {
+        this._eventDispatcher.addEventListener(event, listener);
+      }
+    }, {
+      key: "removeEventListener",
+      value: function removeEventListener(event, listener) {
+        this._eventDispatcher.removeEventListener(event, listener);
+      }
+    }, {
+      key: "destroy",
+      value: function destroy() {
+        this.pause();
+
+        if (this._element.parentNode) {
+          this._element.parentNode.removeChild(this._element);
+        }
+
+        if (this._texture) {
+          this._texture.dispose();
+        }
+
+        this._element.src = '';
+      }
+    }], [{
+      key: "getSupportedFormats",
+      value: function getSupportedFormats() {
+        if (!supportCache) {
+          fillSupportCache();
+        }
+
+        return supportCache || [];
+      }
+    }]);
+
+    return BrowserVideoPlayer;
+  }();
+
+  exports.default = BrowserVideoPlayer;
+});

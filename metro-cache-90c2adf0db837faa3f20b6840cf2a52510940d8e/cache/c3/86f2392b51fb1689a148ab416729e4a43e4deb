@@ -1,0 +1,284 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _AudioInstance = _require(_dependencyMap[0], "../Compositor/Audio/AudioInstance");
+
+  var _AudioInstance2 = _interopRequireDefault(_AudioInstance);
+
+  var _AudioNode = _require(_dependencyMap[1], "../Compositor/Audio/AudioNode");
+
+  var _AudioNode2 = _interopRequireDefault(_AudioNode);
+
+  var _Math = _require(_dependencyMap[2], "../Utils/Math");
+
+  var _Module2 = _require(_dependencyMap[3], "./Module");
+
+  var _Module3 = _interopRequireDefault(_Module2);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+  function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+  var FORWARD = [0, 0, -1];
+  var UP = [0, 1, 0];
+  var ContextConstructor = window.AudioContext || window.webkitAudioContext;
+
+  function decodeAudioData(ctx, compressed) {
+    return new Promise(function (resolve, reject) {
+      ctx.decodeAudioData(compressed, function (buffer) {
+        return resolve(buffer);
+      }, function (err) {
+        return reject(err);
+      });
+    });
+  }
+
+  var AudioModule = function (_Module) {
+    _inherits(AudioModule, _Module);
+
+    function AudioModule(rnctx) {
+      _classCallCheck(this, AudioModule);
+
+      var _this = _possibleConstructorReturn(this, (AudioModule.__proto__ || Object.getPrototypeOf(AudioModule)).call(this, 'AudioModule'));
+
+      _this._audioCtx = new ContextConstructor();
+      _this._audioData = {};
+      _this._handles = {};
+      _this._loaders = {};
+      _this._rnctx = rnctx;
+      return _this;
+    }
+
+    _createClass(AudioModule, [{
+      key: "_load",
+      value: function _load(source) {
+        var _this2 = this;
+
+        var uri = typeof source === 'string' ? source : source.uri;
+
+        if (!uri) {
+          return Promise.reject(new Error('Invalid audio URI'));
+        }
+
+        if (this._audioData[uri]) {
+          return Promise.resolve(this._audioData[uri]);
+        }
+
+        if (this._loaders[uri]) {
+          return this._loaders[uri];
+        }
+
+        var loader = fetch(uri).then(function (response) {
+          return response.arrayBuffer();
+        }).then(function (compressed) {
+          return decodeAudioData(_this2._audioCtx, compressed);
+        }).then(function (buffer) {
+          _this2._audioData[uri] = buffer;
+          delete _this2._loaders[uri];
+          return buffer;
+        });
+        this._loaders[uri] = loader;
+        return loader;
+      }
+    }, {
+      key: "_setCameraParameters",
+      value: function _setCameraParameters(position, rotation) {
+        FORWARD[0] = 0;
+        FORWARD[1] = 0;
+        FORWARD[2] = -1;
+        UP[0] = 0;
+        UP[1] = 1;
+        UP[2] = 0;
+        (0, _Math.rotateByQuaternion)(FORWARD, rotation);
+        (0, _Math.rotateByQuaternion)(UP, rotation);
+
+        this._audioCtx.listener.setPosition(position[0], position[1], position[2]);
+
+        this._audioCtx.listener.setOrientation(FORWARD[0], FORWARD[1], FORWARD[2], UP[0], UP[1], UP[2]);
+      }
+    }, {
+      key: "createAudio",
+      value: function createAudio(handle, options) {
+        var audio = new _AudioInstance2.default(options);
+        this._handles[handle] = audio;
+
+        this._load(options.source);
+      }
+    }, {
+      key: "playOneShot",
+      value: function playOneShot(options) {
+        var _this3 = this;
+
+        var audio = new _AudioInstance2.default(_extends({}, options, {
+          autoPlay: true
+        }));
+
+        this._load(options.source).then(function (buffer) {
+          var node = new _AudioNode2.default(buffer, _this3._audioCtx);
+          audio.setNode(node);
+        });
+      }
+    }, {
+      key: "playEnvironmental",
+      value: function playEnvironmental(options) {
+        var _this4 = this;
+
+        if (this._envInstance) {
+          this._envInstance.stop();
+        }
+
+        var audio = new _AudioInstance2.default(_extends({}, options, {
+          autoPlay: true,
+          loop: true
+        }));
+
+        this._load(options.source).then(function (buffer) {
+          var node = new _AudioNode2.default(buffer, _this4._audioCtx);
+          audio.setNode(node);
+        });
+
+        this._envInstance = audio;
+      }
+    }, {
+      key: "setParams",
+      value: function setParams(handle, options) {
+        var audio = this._handles[handle];
+
+        if (!audio) {
+          return;
+        }
+
+        audio.setParams(options);
+      }
+    }, {
+      key: "setEnvironmentalParams",
+      value: function setEnvironmentalParams(options) {
+        if (!this._envInstance) {
+          return;
+        }
+
+        this._envInstance.setParams(options);
+      }
+    }, {
+      key: "play",
+      value: function play(handle, options) {
+        var _this5 = this;
+
+        var audio = this._handles[handle];
+
+        if (!audio) {
+          return;
+        }
+
+        if (audio.getNode()) {
+          audio.play(options);
+        } else {
+          var source = audio.getSource();
+
+          this._load(source).then(function (buffer) {
+            var node = new _AudioNode2.default(buffer, _this5._audioCtx);
+            audio.setNode(node);
+            audio.play(options);
+          });
+        }
+      }
+    }, {
+      key: "stop",
+      value: function stop(handle) {
+        var audio = this._handles[handle];
+
+        if (!audio) {
+          return;
+        }
+
+        audio.stop();
+      }
+    }, {
+      key: "pause",
+      value: function pause(handle) {
+        var audio = this._handles[handle];
+
+        if (!audio) {
+          return;
+        }
+
+        audio.pause();
+      }
+    }, {
+      key: "seek",
+      value: function seek(handle, time) {
+        var audio = this._handles[handle];
+
+        if (!audio) {
+          return;
+        }
+
+        audio.seekTo(time);
+      }
+    }, {
+      key: "stopEnvironmental",
+      value: function stopEnvironmental() {
+        if (!this._envInstance) {
+          return;
+        }
+
+        this._envInstance.stop();
+      }
+    }, {
+      key: "destroy",
+      value: function destroy(handle) {
+        var audio = this._handles[handle];
+
+        if (!audio) {
+          return;
+        }
+
+        audio.stop();
+        delete this._handles[handle];
+      }
+    }, {
+      key: "load",
+      value: function load(source, onReady) {
+        var _this6 = this;
+
+        this._load(source).then(function () {
+          _this6._rnctx.invokeCallback(onReady, []);
+        });
+      }
+    }, {
+      key: "unload",
+      value: function unload(source) {
+        var uri = typeof source === 'string' ? source : source.uri;
+
+        if (!uri) {
+          return;
+        }
+
+        if (this._audioData[uri]) {
+          delete this._audioData[uri];
+        }
+      }
+    }, {
+      key: "frame",
+      value: function frame(ms) {
+        for (var h in this._handles) {
+          this._handles[h].frame(ms);
+        }
+      }
+    }]);
+
+    return AudioModule;
+  }(_Module3.default);
+
+  exports.default = AudioModule;
+});

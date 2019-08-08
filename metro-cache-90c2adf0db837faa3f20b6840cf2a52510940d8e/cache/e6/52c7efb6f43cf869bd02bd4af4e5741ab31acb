@@ -1,0 +1,118 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  var _ReactExecutor2 = _require(_dependencyMap[0], "./ReactExecutor");
+
+  var _ReactExecutor3 = _interopRequireDefault(_ReactExecutor2);
+
+  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+  function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+  var ReactExecutorWebWorker = function (_ReactExecutor) {
+    _inherits(ReactExecutorWebWorker, _ReactExecutor);
+
+    function ReactExecutorWebWorker() {
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      _classCallCheck(this, ReactExecutorWebWorker);
+
+      var _this = _possibleConstructorReturn(this, (ReactExecutorWebWorker.__proto__ || Object.getPrototypeOf(ReactExecutorWebWorker)).call(this));
+
+      var bridgeCodeBlob = new Blob(["var Status = undefined;\n\n__DEVTOOLS__ = " + (options.enableDevTools ? 'true' : 'false') + ";\n\n__postMessage = postMessage;\n\n__loadBundle = function(bundle) {\n  importScripts(bundle);\n};\n\nonmessage = function(e) {\n" + _ReactExecutor3.default.BRIDGE_HANDLER_CODE + "\n}"]);
+      var bridgeCodeURL = URL.createObjectURL(bridgeCodeBlob);
+      _this._worker = new Worker(bridgeCodeURL);
+
+      _this._worker.onmessage = function (e) {
+        var msg = e.data;
+
+        if (!msg || !(msg instanceof Object)) {
+          return;
+        }
+
+        _this._messageQueue.push(msg);
+      };
+
+      return _this;
+    }
+
+    _createClass(ReactExecutorWebWorker, [{
+      key: "moduleConfig",
+      value: function moduleConfig(moduleDescription) {
+        var msg = JSON.stringify({
+          cmd: 'moduleConfig',
+          moduleConfig: {
+            remoteModuleConfig: moduleDescription
+          }
+        }, _ReactExecutor3.default.replaceHiddenAttributes);
+
+        this._worker.postMessage(msg);
+      }
+    }, {
+      key: "setConstant",
+      value: function setConstant(key, value) {
+        var msg = JSON.stringify({
+          cmd: 'setConstant',
+          key: key,
+          value: value
+        });
+
+        this._worker.postMessage(msg);
+      }
+    }, {
+      key: "exec",
+      value: function exec(url) {
+        var msg = JSON.stringify({
+          cmd: 'bundle',
+          bundleName: url
+        });
+
+        this._worker.postMessage(msg);
+      }
+    }, {
+      key: "call",
+      value: function call(module, fn, args) {
+        var msg = JSON.stringify({
+          cmd: 'exec',
+          module: module,
+          function: fn,
+          args: args
+        });
+
+        this._worker.postMessage(msg);
+      }
+    }, {
+      key: "invoke",
+      value: function invoke(id, args) {
+        var msg = JSON.stringify({
+          cmd: 'invoke',
+          id: id,
+          args: args
+        });
+
+        this._worker.postMessage(msg);
+      }
+    }, {
+      key: "flush",
+      value: function flush() {
+        var msg = JSON.stringify({
+          cmd: 'flush'
+        });
+
+        this._worker.postMessage(msg);
+      }
+    }]);
+
+    return ReactExecutorWebWorker;
+  }(_ReactExecutor3.default);
+
+  exports.default = ReactExecutorWebWorker;
+});

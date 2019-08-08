@@ -1,0 +1,201 @@
+__d(function (global, _require, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  var getGamepads = (navigator.getGamepads ? navigator.getGamepads : navigator.webkitGetGamepads ? navigator.webkitGetGamepads : function () {
+    return [];
+  }).bind(navigator);
+  var LONG_PRESS_TIME = 500;
+  var MAPPING_SHARED_TOUCH = [undefined, 'confirm', undefined, 'confirm', 'back'];
+  var MAPPING_SHARED_MSMR = [undefined, 'confirm', undefined, undefined, 'confirm'];
+  var WELL_KNOWN_MAPPINGS = {
+    'Gear VR Touchpad': ['confirm'],
+    'Gear VR Controller': ['confirm', 'confirm'],
+    'Oculus Go Controller': ['confirm', 'confirm'],
+    'Daydream Controller': ['confirm'],
+    'Oculus Touch (Left)': MAPPING_SHARED_TOUCH,
+    'Oculus Touch (Right)': MAPPING_SHARED_TOUCH,
+    'Spatial Controller (Spatial Interaction Source) 045E-065B': MAPPING_SHARED_MSMR,
+    'Spatial Controller (Spatial Interaction Source) 045E-065D': MAPPING_SHARED_MSMR
+  };
+  var STANDARD_MAPPING = exports.STANDARD_MAPPING = ['confirm', 'back', '', '', '', '', '', '', '', '', '', '', 'up', 'down', 'left', 'right'];
+  var DEFAULT_MAPPING = ['confirm'];
+
+  var GamepadInputChannel = function () {
+    function GamepadInputChannel() {
+      var customMapping = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      _classCallCheck(this, GamepadInputChannel);
+
+      this._mappingCache = [];
+      this._previousState = [];
+      this._customMapping = customMapping;
+      this._onGamepadConnected = this._onGamepadConnected.bind(this);
+      this._onGamepadDisconnected = this._onGamepadDisconnected.bind(this);
+      window.addEventListener('gamepadconnected', this._onGamepadConnected);
+      window.addEventListener('gamepaddisconnected', this._onGamepadDisconnected);
+    }
+
+    _createClass(GamepadInputChannel, [{
+      key: "_getMapping",
+      value: function _getMapping(gamepad, button) {
+        var index = gamepad.index;
+        var cacheEntry = this._mappingCache[index];
+
+        if (!cacheEntry) {
+          cacheEntry = this._updateCacheEntry(gamepad);
+        }
+
+        return cacheEntry[button] || null;
+      }
+    }, {
+      key: "mappingLookup",
+      value: function mappingLookup(gamepad) {
+        var mapping = this._customMapping[gamepad.id];
+
+        if (mapping) {
+          return mapping;
+        }
+
+        if (gamepad.mapping === 'standard') {
+          return STANDARD_MAPPING;
+        }
+
+        mapping = WELL_KNOWN_MAPPINGS[gamepad.id];
+
+        if (mapping) {
+          return mapping;
+        }
+
+        return DEFAULT_MAPPING;
+      }
+    }, {
+      key: "_updateCacheEntry",
+      value: function _updateCacheEntry(gamepad) {
+        var mapping = this.mappingLookup(gamepad);
+        var cacheEntry = new Array(mapping.length);
+
+        for (var btn = 0, len = mapping.length; btn < len; btn++) {
+          if (mapping[btn]) {
+            cacheEntry[btn] = mapping[btn];
+          }
+        }
+
+        this._mappingCache[gamepad.index] = cacheEntry;
+        return cacheEntry;
+      }
+    }, {
+      key: "_onGamepadConnected",
+      value: function _onGamepadConnected(e) {
+        this._updateCacheEntry(e.gamepad);
+      }
+    }, {
+      key: "_onGamepadDisconnected",
+      value: function _onGamepadDisconnected(e) {
+        var gamepad = e.gamepad;
+        this._mappingCache[gamepad.index] = null;
+      }
+    }, {
+      key: "getEvents",
+      value: function getEvents(acc) {
+        var now = Date.now();
+        var gamepads = getGamepads();
+
+        for (var _id = 0; _id < gamepads.length; _id++) {
+          var source = "gamepad_" + _id;
+
+          if (gamepads[_id]) {
+            if (!this._previousState[_id]) {
+              this._previousState[_id] = {
+                buttons: [],
+                axes: []
+              };
+            }
+
+            var state = this._previousState[_id];
+            var _buttons = gamepads[_id].buttons;
+
+            for (var btn = 0; btn < _buttons.length; btn++) {
+              var buttonState = state.buttons[btn];
+
+              if (!buttonState) {
+                buttonState = {
+                  pressed: false,
+                  startTime: -1
+                };
+                state.buttons[btn] = buttonState;
+              }
+
+              var _pressed = typeof _buttons[btn] === 'object' ? _buttons[btn].pressed : _buttons[btn] === 1.0;
+
+              if (buttonState.pressed !== _pressed) {
+                if (_pressed) {
+                  buttonState.pressed = true;
+                  buttonState.startTime = now;
+                  var event = {
+                    type: 'button',
+                    button: btn,
+                    action: 'down',
+                    source: source
+                  };
+
+                  var buttonClass = this._getMapping(gamepads[_id], btn);
+
+                  if (buttonClass) {
+                    event.buttonClass = buttonClass;
+                  }
+
+                  acc.push(event);
+                } else {
+                  buttonState.pressed = false;
+                  var _event = {
+                    type: 'button',
+                    button: btn,
+                    action: 'up',
+                    source: source
+                  };
+
+                  var _buttonClass = this._getMapping(gamepads[_id], btn);
+
+                  if (_buttonClass) {
+                    _event.buttonClass = _buttonClass;
+                  }
+
+                  acc.push(_event);
+                }
+              } else if (_pressed && now - buttonState.startTime > LONG_PRESS_TIME) {
+                var _event2 = {
+                  type: 'button',
+                  button: btn,
+                  action: 'repeat',
+                  source: source
+                };
+
+                var _buttonClass2 = this._getMapping(gamepads[_id], btn);
+
+                if (_buttonClass2) {
+                  _event2.buttonClass = _buttonClass2;
+                }
+
+                acc.push(_event2);
+              }
+            }
+          } else {
+            if (this._previousState[_id]) {
+              delete this._previousState[_id];
+            }
+          }
+        }
+      }
+    }]);
+
+    return GamepadInputChannel;
+  }();
+
+  exports.default = GamepadInputChannel;
+});
